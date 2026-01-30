@@ -1,653 +1,685 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-    <meta charset="UTF-8" />
-    <title>Oficina Manager</title>
-    <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/layout.css" />
-    <link rel="stylesheet" href="css/components.css" />
-</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oficina Manager - Dashboard Profissional</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --info: #4895ef;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --bg: #f0f2f5;
+            --card-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --sidebar-width: 260px;
+        }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--dark);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+        }
+
+        .app {
+            display: flex;
+            width: 100%;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 2rem 1rem;
+            display: flex; flex-direction: column;
+            z-index: 1000;
+            transition: var(--transition);
+        }
+
+        .brand {
+            display: flex; align-items: center; gap: 12px;
+            padding: 0 1rem 2.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 2rem;
+        }
+
+        .brand i { font-size: 1.8rem; color: var(--info); }
+        .brand-text h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px; }
+        .brand-text p { font-size: 0.75rem; opacity: 0.6; }
+
+        .nav-menu { list-style: none; flex: 1; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link {
+            display: flex; align-items: center; gap: 12px; padding: 0.8rem 1.2rem;
+            color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 12px;
+            transition: var(--transition); cursor: pointer; border: none; background: transparent;
+            width: 100%; font-size: 0.95rem; text-align: left;
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-link.active {
+            background: var(--primary); color: white;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
+        }
+        .nav-link i { width: 20px; text-align: center; }
+
+        .main-content {
+            flex: 1; margin-left: var(--sidebar-width); padding: 2rem;
+            transition: var(--transition); max-width: calc(100vw - var(--sidebar-width));
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+        .header-title h2 { font-size: 1.8rem; font-weight: 700; color: #1e293b; }
+        .header-title p { color: #64748b; margin-top: 4px; }
+
+        .view { display: none; animation: fadeIn 0.4s ease-out; }
+        .view.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dashboard-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white; padding: 1.5rem; border-radius: 20px; box-shadow: var(--card-shadow);
+            display: flex; align-items: center; gap: 1.5rem; transition: var(--transition);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-icon {
+            width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+        }
+        .icon-revenue { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+        .icon-orders { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+        .icon-clients { background: rgba(247, 37, 133, 0.1); color: var(--warning); }
+        .icon-pending { background: rgba(72, 149, 239, 0.1); color: var(--info); }
+        .stat-info h3 { font-size: 0.9rem; color: #64748b; margin-bottom: 5px; }
+        .stat-info p { font-size: 1.4rem; font-weight: 700; color: #1e293b; }
+
+        .charts-container { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        .chart-card { background: white; padding: 1.5rem; border-radius: 24px; box-shadow: var(--card-shadow); }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .chart-header h3 { font-size: 1.1rem; font-weight: 600; }
+
+        .table-card { background: white; padding: 1.5rem; border-radius: 24px; box-shadow: var(--card-shadow); overflow: hidden; }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 1rem; color: #64748b; font-weight: 600; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+        td { padding: 1rem; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 0.9rem; }
+        tr:last-child td { border-bottom: none; }
+
+        .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .status-done { background: rgba(76, 201, 240, 0.1); color: #00b4d8; }
+        .status-pending { background: rgba(247, 37, 133, 0.1); color: #f72585; }
+        .status-progress { background: rgba(67, 97, 238, 0.1); color: #4361ee; }
+
+        .btn {
+            padding: 0.8rem 1.5rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer;
+            transition: var(--transition); display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--secondary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3); }
+        .btn-outline { background: transparent; border: 1.5px solid #e2e8f0; color: #64748b; }
+        .btn-outline:hover { background: #f8f9fa; color: #1e293b; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+
+        .input-group { margin-bottom: 1.5rem; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; color: #475569; }
+        .input-control {
+            width: 100%; padding: 0.8rem 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0; transition: var(--transition); font-size: 0.95rem;
+        }
+        .input-control:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1); }
+
+        .modal {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center; z-index: 2000; padding: 1rem;
+        }
+        .modal.is-open { display: flex; }
+        .modal-content {
+            background: white; width: 100%; max-width: 600px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            overflow: hidden; animation: modalIn 0.3s ease-out;
+        }
+        .modal-content.large { max-width: 900px; }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-header { padding: 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 1.5rem; max-height: 80vh; overflow-y: auto; }
+        .modal-footer { padding: 1.5rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; }
+
+        .os-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+        @media (max-width: 1024px) {
+            .charts-container { grid-template-columns: 1fr; }
+            .sidebar { width: 80px; padding: 2rem 0.5rem; }
+            .brand-text, .nav-link span { display: none; }
+            .main-content { margin-left: 80px; max-width: calc(100vw - 80px); }
+        }
+        @media print {
+            .sidebar, .btn, .header-actions { display: none !important; }
+            .main-content { margin-left: 0; padding: 0; max-width: 100%; }
+            .view { display: block !important; }
+            .chart-card, .stat-card { box-shadow: none; border: 1px solid #ddd; }
+        }
+            /* Estilos para alertas */
+    .alert { padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; font-weight: 600; }
+    .alert-danger { background: rgba(239, 68, 68, 0.1); color: #dc2626; border-left: 4px solid #dc2626; }
+    .alert i { font-size: 1.2rem; }
+    /* Badge de status melhorado */
+    .badge { padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+    .badge-atraso { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+    .badge-pendente { background: rgba(251, 191, 36, 0.1); color: #f59e0b; }
+    .badge-ok { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
+    /* Botões de ação */
+    .btn-editar { background: var(--primary); color: white; }
+    .btn-editar:hover { background: var(--secondary); transform: translateY(-2px); }
+    .btn-detalhes { background: var(--info); color: white; }
+    .btn-detalhes:hover { background: #3b82f6; transform: translateY(-2px); }
+    </style>
+</head>
 <body>
     <div class="app">
-        <!-- SIDEBAR -->
+        <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="sidebar__brand">
-                <div class="brand-title">Oficina Manager</div>
-                <div class="brand-subtitle">Sistema de Gestão</div>
+            <div class="brand">
+                <i class="fas fa-tools"></i>
+                <div class="brand-text">
+                    <h1>Oficina Manager</h1>
+                    <p>Professional Pro</p>
+                </div>
             </div>
-
-            <nav class="sidebar__nav">
-                <button class="nav-item active" data-view="dashboard">
-                    <img class="nav-icon" src="assets/icons/dashboard.svg" alt="" />
+            
+            <nav class="nav-menu">
+                <button class="nav-link active" data-view="dashboard">
+                    <i class="fas fa-chart-line"></i>
                     <span>Dashboard</span>
                 </button>
-                <button class="nav-item" data-view="clientes">
-                    <img class="nav-icon" src="assets/icons/clientes.svg" alt="" />
+                <button class="nav-link" data-view="clientes">
+                    <i class="fas fa-users"></i>
                     <span>Clientes</span>
                 </button>
-                <button class="nav-item" data-view="os">
-                    <img class="nav-icon" src="assets/icons/os.svg" alt="" />
+                <button class="nav-link" data-view="os">
+                    <i class="fas fa-file-invoice"></i>
                     <span>Ordens de Serviço</span>
                 </button>
-                <button class="nav-item" data-view="caixa">
-                    <img class="nav-icon" src="assets/icons/caixa.svg" alt="" />
+                <button class="nav-link" data-view="caixa">
+                    <i class="fas fa-cash-register"></i>
                     <span>Caixa</span>
                 </button>
-                <button class="nav-item" data-view="relatorios">
-                    <img class="nav-icon" src="assets/icons/relatorios.svg" alt="" />
+                <button class="nav-link" data-view="relatorios">
+                    <i class="fas fa-file-medical-alt"></i>
                     <span>Relatórios</span>
                 </button>
             </nav>
         </aside>
 
-        <!-- CONTEÚDO -->
-        <main class="main">
-            <!-- DASHBOARD -->
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- VIEW: DASHBOARD -->
             <section id="view-dashboard" class="view active">
-                <header class="page-header">
-                    <div>
-                        <h1>Dashboard</h1>
-                        <p>Visão geral do seu negócio</p>
-                    </div>
-                </header>
-
-                <div class="cards-grid">
-                    <div class="card">
-                        <span class="card-label">Total Entradas</span>
-                        <strong id="dash-total-entradas">R$ 0,00</strong>
-                    </div>
-                    <div class="card">
-                        <span class="card-label">Total Saídas</span>
-                        <strong id="dash-total-saidas">R$ 0,00</strong>
-                    </div>
-                    <div class="card">
-                        <span class="card-label">Saldo</span>
-                        <strong id="dash-saldo">R$ 0,00</strong>
-                    </div>
-                    <div class="card">
-                        <span class="card-label">OS Pendentes</span>
-                        <strong id="dash-os-pendentes">0</strong>
-                    </div>
-                    <div class="card">
-                        <span class="card-label">Clientes c/ Pendência</span>
-                        <strong id="dash-clientes-pendentes">0</strong>
-                    </div>
-                    <div class="card">
-                        <span class="card-label">Total Clientes</span>
-                        <strong id="dash-total-clientes">0</strong>
-                    </div>
-                </div>
-            </section>
-
-            <!-- CLIENTES -->
-            <section id="view-clientes" class="view">
-                <header class="page-header">
-                    <div>
-                        <h1>Clientes</h1>
-                        <p>Gerencie seus clientes e pendências</p>
-                    </div>
-                    <button class="btn primary" id="btn-novo-cliente">+ Novo Cliente</button>
-                </header>
-
-                <div class="page-toolbar">
-                    <input type="text" id="clientes-busca" class="input"
-                        placeholder="Buscar por nome, telefone ou email..." />
-                </div>
-
-                <div class="card table-card">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Contato</th>
-                                <th>CPF/CNPJ</th>
-                                <th>Status</th>
-                                <th class="col-acoes">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="clientes-tbody">
-                            <tr class="empty-row">
-                                <td colspan="4">Nenhum cliente encontrado</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Modal simples de cliente -->
-                <div id="modal-cliente" class="modal">
-                    <div class="modal__backdrop"></div>
-                    <div class="modal__content">
-                        <header class="modal__header">
-                            <h2 id="modal-cliente-titulo">Novo Cliente</h2>
-                        </header>
-                        <form id="form-cliente" class="modal__body">
-                            <input type="hidden" id="cliente-id" />
-                            <label>
-                                Nome
-                                <input type="text" id="cliente-nome" required />
-                            </label>
-                            <label>
-                                Telefone
-                                <input type="text" id="cliente-telefone" />
-                            </label>
-                            <label>
-                                Endereço
-                                <input type="text" id="cliente-endereco" />
-                            </label>
-                            <label>
-                                Modelo do veículo
-                                <input type="text" id="cliente-veiculo-modelo" placeholder="Ex: Gol 1.6" />
-                            </label>
-                            <label>
-                                Ano do veículo
-                                <input type="text" id="cliente-veiculo-ano" placeholder="Ex: 2014" />
-                            </label>
-
-                            <label>
-                                Placa
-                                <input type="text" id="cliente-veiculo-placa" placeholder="Ex: ABC-1234" />
-                            </label>
-                            <label>
-                                Email
-                                <input type="email" id="cliente-email" />
-                            </label>
-                            <label>
-                                CPF/CNPJ
-                                <input type="text" id="cliente-documento" />
-                            </label>
-                            <label>
-                                Observações
-                                <textarea id="cliente-observacoes"></textarea>
-                            </label>
-                            <footer class="modal__footer">
-                                <button type="button" class="btn" id="btn-cancelar-cliente">Cancelar</button>
-                                <button type="submit" class="btn primary">Salvar</button>
-                            </footer>
-                        </form>
+                <div class="header">
+                    <div class="header-title">
+                        <h2>Painel de Controle</h2>
+                        <p id="current-date-display"></p>
                     </div>
                 </div>
 
-                <div id="modal-cliente-detalhes" class="modal">
-                    <div class="modal__backdrop"></div>
-                    <div class="modal__content modal__content--wide">
-                        <header class="modal__header">
-                            <h2>Detalhes do Cliente</h2>
-                        </header>
-                        <div class="modal__body modal-cliente-detalhes-body">
-                            <section class="cliente-info">
-                                <h3>Dados do Cliente</h3>
-                                <p><strong>Nome:</strong> <span id="det-cliente-nome"></span></p>
-                                <p><strong>Contato:</strong> <span id="det-cliente-contato"></span></p>
-                                <p><strong>CPF/CNPJ:</strong> <span id="det-cliente-doc"></span></p>
-                                <p><strong>Endereço:</strong> <span id="det-cliente-endereco"></span></p>
-                                <p><strong>Observações:</strong> <span id="det-cliente-obs"></span></p>
-                            </section>
-
-                            <section class="cliente-historico">
-                                <h3>Histórico de Serviços</h3>
-                                <div class="card table-card">
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th>OS Nº</th>
-                                                <th>Data</th>
-                                                <th>Descrição</th>
-                                                <th>Valor</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="det-cliente-os-tbody">
-                                            <tr class="empty-row">
-                                                <td colspan="5">Nenhum serviço registrado para este cliente</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </section>
-                        </div>
-                        <footer class="modal__footer">
-                            <button type="button" class="btn" id="btn-fechar-detalhes-cliente">Fechar</button>
-                        </footer>
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-revenue"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="stat-info"><h3>Receita Mensal</h3><p id="dash-receita">R$ 0,00</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-orders"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="stat-info"><h3>OS Concluídas</h3><p id="dash-os-concluidas">0</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-clients"><i class="fas fa-user-friends"></i></div>
+                        <div class="stat-info"><h3>Novos Clientes</h3><p id="dash-novos-clientes">0</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-pending"><i class="fas fa-exclamation-circle"></i></div>
+                        <div class="stat-info"><h3>OS Pendentes</h3><p id="dash-os-pendentes">0</p></div>
                     </div>
                 </div>
 
-            </section>
-
-            <!-- ORDENS DE SERVIÇO -->
-            <section id="view-os" class="view">
-                <header class="page-header">
-                    <div>
-                        <h1>Ordens de Serviço</h1>
-                        <p>Gerencie as ordens de serviço da oficina</p>
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="chart-header"><h3>Fluxo de Caixa (7 dias)</h3></div>
+                        <canvas id="revenueChart" height="100"></canvas>
                     </div>
-                    <button class="btn primary" id="btn-nova-os">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Nova OS
-                    </button>
-                </header>
-
-                <!-- Filtros e Busca -->
-                <div class="os-toolbar">
-                    <div class="os-search-box">
-                        <svg class="os-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                        <input type="text" id="os-busca" class="os-search-input" placeholder="Buscar por nº da OS, cliente ou veículo..." />
-                    </div>
-                    <div class="os-filters">
-                        <select id="os-filtro-status" class="os-filter-select">
-                            <option value="">Todos os status</option>
-                            <option value="aberto">Aberto</option>
-                            <option value="em_andamento">Em andamento</option>
-                            <option value="concluido">Concluído</option>
-                            <option value="cancelado">Cancelado</option>
-                        </select>
+                    <div class="chart-card">
+                        <div class="chart-header"><h3>Status das OS</h3></div>
+                        <canvas id="statusChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Cards de Resumo -->
-                <div class="os-summary-cards">
-                    <div class="os-summary-card">
-                        <div class="os-summary-icon os-summary-icon--total">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                            </svg>
-                        </div>
-                        <div class="os-summary-info">
-                            <span class="os-summary-label">Total de OS</span>
-                            <strong id="os-total-count">0</strong>
-                        </div>
+                <div class="table-card">
+                    <div class="chart-header">
+                        <h3>Ordens de Serviço Recentes</h3>
+                        <button class="btn btn-outline" onclick="goToView('os')">Ver Todas</button>
                     </div>
-                    <div class="os-summary-card">
-                        <div class="os-summary-icon os-summary-icon--open">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                        </div>
-                        <div class="os-summary-info">
-                            <span class="os-summary-label">Em Aberto</span>
-                            <strong id="os-open-count">0</strong>
-                        </div>
-                    </div>
-                    <div class="os-summary-card">
-                        <div class="os-summary-icon os-summary-icon--progress">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
-                            </svg>
-                        </div>
-                        <div class="os-summary-info">
-                            <span class="os-summary-label">Em Andamento</span>
-                            <strong id="os-progress-count">0</strong>
-                        </div>
-                    </div>
-                    <div class="os-summary-card">
-                        <div class="os-summary-icon os-summary-icon--done">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                            </svg>
-                        </div>
-                        <div class="os-summary-info">
-                            <span class="os-summary-label">Concluídas</span>
-                            <strong id="os-done-count">0</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tabela de OS -->
-                <div class="os-table-container">
-                    <table class="os-table">
-                        <thead>
-                            <tr>
-                                <th class="os-col-num">Nº</th>
-                                <th class="os-col-date">Data</th>
-                                <th class="os-col-client">Cliente</th>
-                                <th class="os-col-vehicle">Veículo</th>
-                                <th class="os-col-value">Valor</th>
-                                <th class="os-col-payment">Pagamento</th>
-                                <th class="os-col-status">Status</th>
-                                <th class="os-col-actions">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="os-tbody">
-                            <tr class="os-empty-row">
-                                <td colspan="8">
-                                    <div class="os-empty-state">
-                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                            <polyline points="14 2 14 8 20 8"></polyline>
-                                            <line x1="12" y1="18" x2="12" y2="12"></line>
-                                            <line x1="9" y1="15" x2="15" y2="15"></line>
-                                        </svg>
-                                        <p>Nenhuma ordem de serviço encontrada</p>
-                                        <span>Clique em "Nova OS" para criar a primeira</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Modal Nova/Editar OS -->
-                <div id="modal-os" class="modal">
-                    <div class="modal__backdrop"></div>
-                    <div class="os-modal-content">
-                        <header class="os-modal-header">
-                            <div class="os-modal-title-area">
-                                <h2 id="modal-os-titulo">Nova Ordem de Serviço</h2>
-                                <span id="os-numero-display" class="os-numero-badge"></span>
-                            </div>
-                            <button type="button" class="os-modal-close" id="btn-close-os">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
-                            </button>
-                        </header>
-
-                        <form id="form-os" class="os-modal-form">
-                            <input type="hidden" id="os-id" />
-
-                            <div class="os-form-grid">
-                                <!-- Coluna Esquerda: Dados da OS -->
-                                <div class="os-form-section">
-                                    <div class="os-section-header">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                            <polyline points="14 2 14 8 20 8"></polyline>
-                                        </svg>
-                                        <h3>Dados da OS</h3>
-                                    </div>
-
-                                    <div class="os-form-group">
-                                        <label class="os-label" for="os-cliente-id">Cliente *</label>
-                                        <select id="os-cliente-id" class="os-select" required></select>
-                                    </div>
-
-                                    <div class="os-form-row">
-                                        <div class="os-form-group">
-                                            <label class="os-label" for="os-veiculo">Veículo</label>
-                                            <input type="text" id="os-veiculo" class="os-input" placeholder="Ex: Gol 1.6 2014 - ABC-1234" />
-                                        </div>
-                                    </div>
-
-                                    <div class="os-form-row os-form-row--half">
-                                        <div class="os-form-group">
-                                            <label class="os-label" for="os-data-abertura">Data Abertura</label>
-                                            <input type="date" id="os-data-abertura" class="os-input" />
-                                        </div>
-                                        <div class="os-form-group">
-                                            <label class="os-label" for="os-status">Status</label>
-                                            <select id="os-status" class="os-select">
-                                                <option value="aberto">Aberto</option>
-                                                <option value="em_andamento">Em andamento</option>
-                                                <option value="concluido">Concluído</option>
-                                                <option value="cancelado">Cancelado</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="os-form-group">
-                                        <label class="os-label" for="os-descricao">Descrição do Serviço</label>
-                                        <textarea id="os-descricao" class="os-textarea" rows="3" placeholder="Descreva os serviços realizados..."></textarea>
-                                    </div>
-
-                                    <div class="os-form-group">
-                                        <label class="os-label" for="os-valor-total">Valor Total (R$) *</label>
-                                        <input type="number" step="0.01" min="0" id="os-valor-total" class="os-input os-input--currency" placeholder="0,00" />
-                                    </div>
-                                </div>
-
-                                <!-- Coluna Direita: Pagamento e Parcelas -->
-                                <div class="os-form-section">
-                                    <div class="os-section-header">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                                            <line x1="1" y1="10" x2="23" y2="10"></line>
-                                        </svg>
-                                        <h3>Pagamento</h3>
-                                    </div>
-
-                                    <div class="os-payment-config">
-                                        <div class="os-form-row os-form-row--thirds">
-                                            <div class="os-form-group">
-                                                <label class="os-label" for="os-numero-parcelas">Parcelas</label>
-                                                <input type="number" id="os-numero-parcelas" class="os-input" min="1" max="48" value="1" />
-                                            </div>
-                                            <div class="os-form-group">
-                                                <label class="os-label" for="os-data-primeira-parcela">1ª Parcela</label>
-                                                <input type="date" id="os-data-primeira-parcela" class="os-input" />
-                                            </div>
-                                            <div class="os-form-group os-form-group--btn">
-                                                <button type="button" class="os-btn-generate" id="btn-gerar-parcelas">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <polyline points="23 4 23 10 17 10"></polyline>
-                                                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                                                    </svg>
-                                                    Gerar
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="os-parcelas-container">
-                                        <div class="os-parcelas-header">
-                                            <span>Parcelas</span>
-                                            <span id="os-parcelas-total" class="os-parcelas-total">Total: R$ 0,00</span>
-                                        </div>
-                                        <div class="os-parcelas-list" id="os-parcelas-tbody">
-                                            <div class="os-parcela-empty">
-                                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                                                    <line x1="1" y1="10" x2="23" y2="10"></line>
-                                                </svg>
-                                                <p>Nenhuma parcela gerada</p>
-                                                <span>Preencha o valor e clique em "Gerar"</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <footer class="os-modal-footer">
-                                <button type="button" class="os-btn os-btn--cancel" id="btn-cancelar-os">Cancelar</button>
-                                <button type="submit" class="os-btn os-btn--save">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                        <polyline points="7 3 7 8 15 8"></polyline>
-                                    </svg>
-                                    Salvar OS
-                                </button>
-                            </footer>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Modal Detalhes OS -->
-                <div id="modal-os-detalhes" class="modal">
-                    <div class="modal__backdrop"></div>
-                    <div class="os-modal-content os-modal-content--details">
-                        <header class="os-modal-header">
-                            <div class="os-modal-title-area">
-                                <h2>Detalhes da OS</h2>
-                                <span id="os-det-numero" class="os-numero-badge"></span>
-                            </div>
-                            <button type="button" class="os-modal-close" id="btn-close-os-det">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
-                            </button>
-                        </header>
-                        <div class="os-details-body" id="os-details-content">
-                            <!-- Conteúdo dinâmico -->
-                        </div>
-                        <footer class="os-modal-footer">
-                            <button type="button" class="os-btn os-btn--cancel" id="btn-fechar-os-det">Fechar</button>
-                            <button type="button" class="os-btn os-btn--edit" id="btn-editar-os-det">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                                Editar
-                            </button>
-                        </footer>
-                    </div>
-                </div>
-
-            </section>
-
-
-
-            <!-- CAIXA -->
-            <section id="view-caixa" class="view">
-                <header class="page-header">
-                    <div>
-                        <h1>Caixa</h1>
-                        <p>Controle de entradas e saídas</p>
-                    </div>
-                    <div class="page-header-actions">
-                        <button class="btn success" id="btn-nova-entrada">Nova Entrada</button>
-                        <button class="btn danger" id="btn-nova-saida">Nova Saída</button>
-                    </div>
-                </header>
-
-                <div class="cards-grid cards-grid--caixa">
-                    <div class="card">
-                        <span class="card-label">Total Entradas</span>
-                        <strong id="caixa-total-entradas">R$ 0,00</strong>
-                    </div>
-                    <div class="card">
-                        <span class="card-label">Total Saídas</span>
-                        <strong id="caixa-total-saidas">R$ 0,00</strong>
-                    </div>
-                    <div class="card">
-                        <span class="card-label">Saldo</span>
-                        <strong id="caixa-saldo">R$ 0,00</strong>
-                    </div>
-                </div>
-
-                <div class="tabs">
-                    <button class="tab active" data-caixa-filter="todas">Todas</button>
-                    <button class="tab" data-caixa-filter="entrada">Entradas</button>
-                    <button class="tab" data-caixa-filter="saida">Saídas</button>
-                </div>
-
-                <div class="card table-card">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Tipo</th>
-                                <th>Descrição</th>
-                                <th>Cliente</th>
-                                <th>Forma Pgto</th>
-                                <th>Valor</th>
-                                <th class="col-acoes">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="caixa-tbody">
-                            <tr class="empty-row">
-                                <td colspan="7">Nenhuma transação encontrada</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- RELATÓRIOS -->
-            <section id="view-relatorios" class="view">
-                <header class="page-header">
-                    <div>
-                        <h1>Relatórios</h1>
-                        <p>Análise financeira e operacional</p>
-                    </div>
-                    <button class="btn outline" id="btn-exportar-relatorio">Exportar Relatório</button>
-                </header>
-
-                <div class="card filters-card">
-                    <div class="filters-row">
-                        <div class="filter-field">
-                            <label>Data Início</label>
-                            <input type="date" id="rel-data-inicio" class="input" />
-                        </div>
-                        <div class="filter-field">
-                            <label>Data Fim</label>
-                            <input type="date" id="rel-data-fim" class="input" />
-                        </div>
-                        <div class="filter-field filter-field--button">
-                            <button class="btn primary" id="btn-aplicar-filtros-rel">Aplicar Filtros</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tabs tabs--rel">
-                    <button class="tab active" data-rel-tab="financeiro">Financeiro</button>
-                    <button class="tab" data-rel-tab="operacional">Operacional</button>
-                    <button class="tab" data-rel-tab="clientes">Clientes</button>
-                </div>
-
-                <div id="rel-financeiro" class="rel-tab active">
-                    <div class="cards-grid">
-                        <div class="card">
-                            <span class="card-label">Total Entradas (período)</span>
-                            <strong id="rel-ent-periodo">R$ 0,00</strong>
-                        </div>
-                        <div class="card">
-                            <span class="card-label">Total Saídas (período)</span>
-                            <strong id="rel-sai-periodo">R$ 0,00</strong>
-                        </div>
-                        <div class="card">
-                            <span class="card-label">Saldo do Período</span>
-                            <strong id="rel-saldo-periodo">R$ 0,00</strong>
-                            <small id="rel-saldo-status" class="tag tag-positive">Positivo</small>
-                        </div>
-                    </div>
-
-                    <div class="card table-card">
-                        <h2 class="card-title">Detalhamento de Transações</h2>
-                        <table class="table">
+                    <div class="table-container">
+                        <table>
                             <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Tipo</th>
-                                    <th>Descrição</th>
-                                    <th>Cliente</th>
-                                    <th>Forma Pgto</th>
-                                    <th>Valor</th>
-                                </tr>
+                                <tr><th>Nº OS</th><th>Cliente</th><th>Veículo</th><th>Valor</th><th>Status</th></tr>
                             </thead>
-                            <tbody id="rel-transacoes-tbody">
-                                <tr class="empty-row">
-                                    <td colspan="6">Nenhuma transação no período selecionado</td>
-                                </tr>
-                            </tbody>
+                            <tbody id="dash-recent-os"></tbody>
                         </table>
                     </div>
                 </div>
+            </section>
 
+            260
+            
+            <section id="view-clientes" class="view">
+                <div class="header">
+                    <div class="header-title"><h2>Gestão de Clientes</h2><p>Gerencie sua base de contatos</p></div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="abrirModalCliente()">
+                            <i class="fas fa-plus"></i> Novo Cliente
+                        </button>
+                    </div>
+                </div>
+                <div class="table-card">
+                    <div class="chart-header" style="padding-bottom: 1rem;">
+                        <input type="text" id="clientes-busca" class="input-control" placeholder="Pesquisar cliente..." oninput="renderClientesTabela()">
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Nome</th><th>Contato</th><th>Veículo Atua<th>ID</th>l</th><th>Ações</th></tr></thead>
+                            <tbody id="clientes-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: OS -->
+            <section id="view-os" class="view">
+                <div class="header">
+                    <div class="header-title"><h2>Ordens de Serviço</h2><p>Acompanhamento de reparos</p></div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="abrirModalOS()">
+                            <i class="fas fa-file-medical"></i> Abrir OS
+                        </button>
+                    </div>
+                </div>
+                <div class="table-card">
+                    <div class="chart-header" style="gap: 1rem;">
+                        <input type="text" id="os-busca" class="input-control" placeholder="Buscar OS..." oninput="renderOSTabela()">
+                        <select id="os-filtro-status" class="input-control" onchange="renderOSTabela()">
+                            <option value="">Todos os Status</option>
+                            <option value="aberto">Aberto</option>
+                            <option value="em_andamento">Em Andamento</option>
+                            <option value="concluido">Concluído</option>
+                        </select>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Veículo</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
+                            <tbody id="os-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: CAIXA -->
+            <section id="view-caixa" class="view">
+                <div class="header">
+                    <div class="header-title"><h2>Fluxo de Caixa</h2><p>Entradas e saídas</p></div>
+                    <div class="header-actions">
+                        <button class="btn btn-success" onclick="abrirModalCaixa('entrada')"><i class="fas fa-arrow-down"></i> Entrada</button>
+                        <button class="btn btn-danger" onclick="abrirModalCaixa('saida')"><i class="fas fa-arrow-up"></i> Saída</button>
+                    </div>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="stat-card"><div class="stat-info"><h3>Total Entradas</h3><p id="caixa-total-entradas" style="color:#10b981">R$ 0,00</p></div></div>
+                    <div class="stat-card"><div class="stat-info"><h3>Total Saídas</h3><p id="caixa-total-saidas" style="color:#ef4444">R$ 0,00</p></div></div>
+                    <div class="stat-card"><div class="stat-info"><h3>Saldo Atual</h3><p id="caixa-saldo">R$ 0,00</p></div></div>
+                </div>
+                <div class="table-card">
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Ações</th></tr></thead>
+                            <tbody id="caixa-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: RELATORIOS -->
+            <section id="view-relatorios" class="view">
+                <div class="header">
+                    <div class="header-title"><h2>Relatórios</h2><p>Análise de performance</p></div>
+                    <div class="header-actions">
+                        <button class="btn btn-outline" onclick="window.print()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    </div>
+                </div>
+                <div class="table-card">
+                    <div id="rel-summary" class="dashboard-grid"></div>
+                </div>
             </section>
         </main>
-        <div id="toast-container"></div>
     </div>
 
-    <script src="js/storage.js"></script>
-    <script src="js/router.js"></script>
-    <script src="js/clientes.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/os.js"></script>
-    <script src="js/caixa.js"></script>
-    <script src="js/relatorios.js"></script>
-    <script src="js/dashboard.js"></script>
-</body>
+    <!-- MODAL CLIENTE -->
+    <div 378
+    <div id="modal-cliente" class="modal">
+    <div class="modal-content">
+      <div class="modal-header"><h3 id="modal-cliente-titulo">Cliente</h3><button onclick="fecharModal('modal-cliente')">×</button></div>
+      <form id="form-cliente">
+        <div class="modal-body">
+          <input type="hidden" id="cliente-id">
+          <div class="input-group"><label>ID do Cliente</label><input type="text" id="cliente-id-sequencial" class="input-control" disabled style="background:#f1f5f9;"></div>
+          <div class="input-group"><label>Nome *</label><input type="text" id="cliente-nome" class="input-control" required></div>
+          <div class="os-form-grid">
+            <div class="input-group"><label>CPF/CNPJ</label><input type="text" id="cliente-documento" class="input-control"></div>
+            <div class="input-group"><label>Telefone</label><input type="text" id="cliente-telefone" class="input-control"></div>
+          </div>
+          <div class="input-group"><label>Email</label><input type="email" id="cliente-email" class="input-control"></div>
+          <div class="input-group"><label>Endereço</label><input type="text" id="cliente-endereco" class="input-control"></div>
+          <div class="os-form-grid">
+            <div class="input-group"><label>Veículo (Modelo)</label><input type="text" id="cliente-veiculo-modelo" class="input-control"></div>
+            <div class="input-group"><label>Ano</label><input type="text" id="cliente-veiculo-ano" class="input-control"></div>
+          </div>
+          <div class="input-group"><label>Placa do Veículo</label><input type="text" id="cliente-veiculo-placa" class="input-control" placeholder="ABC-1234"></div>
+          <div class="input-group"><label>Observações</label><textarea id="cliente-observacoes" class="input-control" rows="2"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="fecharModal('modal-cliente')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
+      <!-- MODAL DETALHES CLIENTE -->
+  <div id="modal-cliente-detalhes" class="modal">
+    <div class="modal-content large">
+      <div class="modal-header"><h3>Detalhes do Cliente</h3><button id="btn-fechar-detalhes-cliente" onclick="fecharModal('modal-cliente-detalhes')">×</button></div>
+      <div class="modal-body">
+        <!-- Alerta de Atraso -->
+        <div id="det-cliente-alerta-atraso" style="display:none; margin-bottom:1.5rem;"></div>
+        
+        <!-- Informações do Cliente -->
+        <div class="table-card" style="margin-bottom:1.5rem;">
+          <h4 style="margin-bottom:1rem; color:var(--primary);"><i class="fas fa-user-circle"></i> Informações do Cliente</h4>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div><strong>ID:</strong> <span id="det-cliente-id-seq"></span></div>
+            <div><strong>Nome:</strong> <span id="det-cliente-nome"></span></div>
+            <div><strong>CPF/CNPJ:</strong> <span id="det-cliente-documento"></span></div>
+            <div><strong>Placa:</strong> <span id="det-cliente-placa"></span></div>
+            <div><strong>Veículo:</strong> <span id="det-cliente-veiculo-info"></span></div>
+            <div><strong>Contato:</strong> <span id="det-cliente-contato"></span></div>
+          </div>
+          <div style="margin-top:1rem;">
+            <div><strong>Endereço:</strong> <span id="det-cliente-endereco"></span></div>
+            <div style="margin-top:0.5rem;"><strong>Observações:</strong> <span id="det-cliente-obs"></span></div>
+          </div>
+        </div>
+        
+        <!-- Histórico de Ordens de Serviço -->
+        <div class="table-card">
+          <h4 style="margin-bottom:1rem; color:var(--primary);"><i class="fas fa-history"></i> Histórico de Serviços</h4>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr><th>Nº OS</th><th>Data</th><th>Descrição</th><th>Valor</th><th>Status</th></tr>
+              </thead>
+              <tbody id="det-cliente-os-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="fecharModal('modal-cliente-detalhes')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- MODAL OS -->
+    <div id="modal-os" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header"><h3>Ordem de Serviço</h3><button onclick="fecharModal('modal-os')">&times;</button></div>
+            <form id="form-os">
+                <div class="modal-body">
+                    <input type="hidden" id="os-id">
+                    <div class="os-form-grid">
+                        <div class="input-group"><label>Cliente *</label><select id="os-cliente-id" class="input-control" required></select></div>
+                        <div class="input-group"><label>Veículo</label><input type="text" id="os-veiculo" class="input-control"></div>
+                        <div class="input-group"><label>Data</label><input type="date" id="os-data-abertura" class="input-control"></div>
+                        <div class="input-group"><label>Status</label>
+                            <select id="os-status" class="input-control">
+                                <option value="aberto">Aberto</option>
+                                <option value="em_andamento">Em Andamento</option>
+                                <option value="concluido">Concluído</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group"><label>Valor Total (R*) *</label><input type="number" step="0.01" id="os-valor-total" class="input-control" required></div>
+                    <div class="input-group"><label>Descrição</label><textarea id="os-descricao" class="input-control" rows="2"></textarea></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="fecharModal('modal-os')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar OS</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CAIXA -->
+    <div id="modal-caixa" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="modal-caixa-titulo">Lançamento</h3><button onclick="fecharModal('modal-caixa')">&times;</button></div>
+            <form id="form-caixa">
+                <div class="modal-body">
+                    <input type="hidden" id="caixa-tipo">
+                    <div class="input-group"><label>Data</label><input type="date" id="caixa-data" class="input-control" required></div>
+                    <div class="input-group"><label>Descrição</label><input type="text" id="caixa-descricao" class="input-control" required></div>
+                    <div class="input-group"><label>Valor (R$)</label><input type="number" step="0.01" id="caixa-valor" class="input-control" required></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="fecharModal('modal-caixa')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Lançar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:9999;"></div>
+
+    <script>
+        // --- DATA LAYER ---
+        const KEYS = { CLIENTES: 'om_clientes', OS: 'om_os', CAIXA: 'om_caixa' };
+        let db = {
+            clientes: JSON.parse(localStorage.getItem(KEYS.CLIENTES)) || [],
+            os: JSON.parse(localStorage.getItem(KEYS.OS)) || [],
+            caixa: JSON.parse(localStorage.getItem(KEYS.CAIXA)) || []
+        };
+        const save = () => {
+            localStorage.setItem(KEYS.CLIENTES, JSON.stringify(db.clientes));
+            localStorage.setItem(KEYS.OS, JSON.stringify(db.os));
+            localStorage.setItem(KEYS.CAIXA, JSON.stringify(db.caixa));
+        };
+
+        // --- UTILS ---
+        const fmtBRL = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+        const fmtDate = d => d ? d.split('-').reverse().join('/') : '-';
+        const isoToday = () => new Date().toISOString().split('T')[0];
+
+        function toast(msg, type='success') {
+            const el = document.createElement('div');
+            el.style.cssText = `background:${type==='success'?'#10b981':'#ef4444'}; color:white; padding:12px 24px; border-radius:12px; margin-bottom:10px; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.1);`;
+            el.textContent = msg;
+            document.getElementById('toast-container').appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+
+        // --- NAVIGATION ---
+        function goToView(v) {
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${v}`).classList.add('active');
+            document.querySelector(`[data-view="${v}"]`).classList.add('active');
+            if(v==='dashboard') updateDash();
+            if(v==='clientes') renderClientesTabela();
+            if(v==='os') renderOSTabela();
+            if(v==='caixa') renderCaixa();
+        }
+        document.querySelectorAll('.nav-link').forEach(btn => {
+            btn.onclick = () => goToView(btn.dataset.view);
+        });
+
+        // --- MODALS ---
+        function fecharModal(id) { document.getElementById(id).classList.remove('is-open'); }
+
+        // --- CLIENTES ---
+        function abrirModalCliente(id=null) {
+            const f = document.getElementById('form-cliente'); f.reset();
+            if(id) {
+                const c = db.clientes.find(x => x.id === id);
+                document.getElementById('cliente-id').value = c.id;
+                document.getElementById('cliente-nome').value = c.nome;
+                document.getElementById('cliente-telefone').value = c.telefone;
+                document.getElementById('cliente-veiculo-modelo').value = c.veiculoModelo;
+            } else { document.getElementById('cliente-id').value = ''; }
+            document.getElementById('modal-cliente').classList.add('is-open');
+        }
+        document.getElementById('form-cliente').onsubmit = e => {
+            e.preventDefault();
+            const id = document.getElementById('cliente-id').value || Date.now().toString();
+            const data = {
+                id,
+                nome: document.getElementById('cliente-nome').value,
+                telefone: document.getElementById('cliente-telefone').value,
+                veiculoModelo: document.getElementById('cliente-veiculo-modelo').value
+            };
+            const idx = db.clientes.findIndex(x => x.id === id);
+            if(idx>-1) db.clientes[idx]=data; else db.clientes.push(data);
+            save(); fecharModal('modal-cliente'); renderClientesTabela(); toast('Cliente salvo!');
+        };
+        function renderClientesTabela() {
+            const tb = document.getElementById('clientes-tbody'); tb.innerHTML = '';
+            db.clientes.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${c.nome}</td><td>${c.telefone}</td><td>${c.veiculoModelo}</td>
+                <td><button onclick="abrirModalCliente('${c.id}')">Edit</button></td>`;
+                tb.appendChild(tr);
+            });
+        }
+
+        // --- OS ---
+        function abrirModalOS(id=null) {
+            const sel = document.getElementById('os-cliente-id');
+            sel.innerHTML = db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+            const f = document.getElementById('form-os'); f.reset();
+            document.getElementById('os-data-abertura').value = isoToday();
+            if(id) { /* implement edit if needed */ }
+            document.getElementById('modal-os').classList.add('is-open');
+        }
+        document.getElementById('form-os').onsubmit = e => {
+            e.preventDefault();
+            const os = {
+                id: Date.now().toString(),
+                numero: db.os.length + 1,
+                clienteId: document.getElementById('os-cliente-id').value,
+                veiculo: document.getElementById('os-veiculo').value,
+                dataAbertura: document.getElementById('os-data-abertura').value,
+                status: document.getElementById('os-status').value,
+                valorTotal: parseFloat(document.getElementById('os-valor-total').value)
+            };
+            db.os.push(os);
+            if(os.status==='concluido') db.caixa.push({id:Date.now()+'_c', tipo:'entrada', data:os.dataAbertura, descricao:'OS #'+os.numero, valor:os.valorTotal});
+            save(); fecharModal('modal-os'); renderOSTabela(); toast('OS Criada!');
+        };
+        function renderOSTabela() {
+            const tb = document.getElementById('os-tbody'); tb.innerHTML = '';
+            db.os.forEach(o => {
+                const c = db.clientes.find(x => x.id === o.clienteId);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>#${o.numero}</td><td>${fmtDate(o.dataAbertura)}</td><td>${c?c.nome:'-'}</td><td>${o.veiculo}</td><td>${fmtBRL(o.valorTotal)}</td><td>${o.status}</td><td>-</td>`;
+                tb.appendChild(tr);
+            });
+        }
+
+        // --- CAIXA ---
+        function abrirModalCaixa(t) {
+            document.getElementById('caixa-tipo').value = t;
+            document.getElementById('caixa-data').value = isoToday();
+            document.getElementById('modal-caixa-titulo').textContent = t === 'entrada' ? 'Nova Entrada' : 'Nova Saída';
+            document.getElementById('modal-caixa').classList.add('is-open');
+        }
+        document.getElementById('form-caixa').onsubmit = e => {
+            e.preventDefault();
+            const mov = {
+                id: Date.now().toString(),
+                tipo: document.getElementById('caixa-tipo').value,
+                data: document.getElementById('caixa-data').value,
+                descricao: document.getElementById('caixa-descricao').value,
+                valor: parseFloat(document.getElementById('caixa-valor').value)
+            };
+            db.caixa.push(mov); save(); fecharModal('modal-caixa'); renderCaixa(); toast('Lançado!');
+        };
+        function renderCaixa() {
+            const tb = document.getElementById('caixa-tbody'); tb.innerHTML = '';
+            let ent=0, sai=0;
+            db.caixa.forEach(m => {
+                if(m.tipo==='entrada') ent+=m.valor; else sai+=m.valor;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${fmtDate(m.data)}</td><td>${m.tipo}</td><td>${m.descricao}</td><td>${fmtBRL(m.valor)}</td><td>-</td>`;
+                tb.appendChild(tr);
+            });
+            document.getElementById('caixa-total-entradas').textContent = fmtBRL(ent);
+            document.getElementById('caixa-total-saidas').textContent = fmtBRL(sai);
+            document.getElementById('caixa-saldo').textContent = fmtBRL(ent-sai);
+        }
+
+        // --- DASHBOARD ---
+        function updateDash() {
+            document.getElementById('current-date-display').textContent = new Date().toLocaleDateString();
+            const rec = db.caixa.filter(m=>m.tipo==='entrada').reduce((a,b)=>a+b.valor,0);
+            document.getElementById('dash-receita').textContent = fmtBRL(rec);
+            document.getElementById('dash-os-concluidas').textContent = db.os.filter(o=>o.status==='concluido').length;
+            document.getElementById('dash-novos-clientes').textContent = db.clientes.length;
+            document.getElementById('dash-os-pendentes').textContent = db.os.filter(o=>o.status!=='concluido').length;
+            
+            const ctx1 = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctx1, { type:'line', data:{ labels:['S','T','Q','Q','S','S','D'], datasets:[{label:'Fluxo', data:[10,20,15,30,25,40,35], borderColor:'#4361ee'}] }});
+            const ctx2 = document.getElementById('statusChart').getContext('2d');
+            new Chart(ctx2, { type:'doughnut', data:{ labels:['OK','Ab','And'], datasets:[{data:[5,2,3], backgroundColor:['#4cc9f0','#4361ee','#f72585']}] }});
+        }
+
+        window.onload = () => { updateDash(); };
+    </script>
+
+  <script src="js/storage.js"></script>
+  <script src="js/clientes.js"></script>
+  <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:9999;"></div></body>
 </html>

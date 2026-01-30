@@ -213,6 +213,10 @@ function initDetalhesClienteModal() {
 }
 
 window.initClientes = function initClientes() {
+      // Verificar se estamos na página de clientes
+    const tbody = document.getElementById('clientes-tbody');
+    if (!tbody) return; // Não estamos na página de clientes
+
   const btnNovo = document.getElementById('btn-novo-cliente');
   const inputBusca = document.getElementById('clientes-busca');
   const form = document.getElementById('form-cliente');
@@ -279,15 +283,14 @@ function excluirCliente(id) {
   showToast('Cliente excluído com sucesso.', 'info');
 }
 
-function formatCurrency
-  (val) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+function formatCurrency(val) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+}
 
-  // Inicializar automaticamente quando o DOM estiver pronto
+// Inicializar automaticamente quando o DOM estiver pronto
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initClientes);
 } else {
     // DOMContentLoaded já foi disparado
     initClientes();
-}
 }

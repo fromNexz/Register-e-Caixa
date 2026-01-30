@@ -4,582 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oficina Manager - Dashboard Profissional</title>
+    <title>Oficina Manager - Sistema Profissional</title>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <style>
-        :root {
-            --primary: #4361ee;
-            --secondary: #3f37c9;
-            --success: #4cc9f0;
-            --warning: #f72585;
-            --info: #4895ef;
-            --dark: #212529;
-            --light: #f8f9fa;
-            --bg: #f0f2f5;
-            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            --sidebar-width: 260px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--dark);
-            min-height: 100vh;
-            display: flex;
-            overflow-x: hidden;
-        }
-
-        .app {
-            display: flex;
-            width: 100%;
-        }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            color: white;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            padding: 2rem 1rem;
-            display: flex;
-            flex-direction: column;
-            z-index: 1000;
-            transition: var(--transition);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0 1rem 2.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 2rem;
-        }
-
-        .brand i {
-            font-size: 1.8rem;
-            color: var(--info);
-        }
-
-        .brand-text h1 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        .brand-text p {
-            font-size: 0.75rem;
-            opacity: 0.6;
-        }
-
-        .nav-menu {
-            list-style: none;
-            flex: 1;
-        }
-
-        .nav-item {
-            margin-bottom: 0.5rem;
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0.8rem 1.2rem;
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            border-radius: 12px;
-            transition: var(--transition);
-            cursor: pointer;
-            border: none;
-            background: transparent;
-            width: 100%;
-            font-size: 0.95rem;
-            text-align: left;
-        }
-
-        .nav-link:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-        }
-
-        .nav-link.active {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
-        }
-
-        .nav-link i {
-            width: 20px;
-            text-align: center;
-        }
-
-        .main-content {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            padding: 2rem;
-            transition: var(--transition);
-            max-width: calc(100vw - var(--sidebar-width));
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2.5rem;
-        }
-
-        .header-title h2 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
-
-        .header-title p {
-            color: #64748b;
-            margin-top: 4px;
-        }
-
-        .view {
-            display: none;
-            animation: fadeIn 0.4s ease-out;
-        }
-
-        .view.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 20px;
-            box-shadow: var(--card-shadow);
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            transition: var(--transition);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .icon-revenue {
-            background: rgba(76, 201, 240, 0.1);
-            color: var(--success);
-        }
-
-        .icon-orders {
-            background: rgba(67, 97, 238, 0.1);
-            color: var(--primary);
-        }
-
-        .icon-clients {
-            background: rgba(247, 37, 133, 0.1);
-            color: var(--warning);
-        }
-
-        .icon-pending {
-            background: rgba(72, 149, 239, 0.1);
-            color: var(--info);
-        }
-
-        .stat-info h3 {
-            font-size: 0.9rem;
-            color: #64748b;
-            margin-bottom: 5px;
-        }
-
-        .stat-info p {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
-
-        .charts-container {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .chart-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 24px;
-            box-shadow: var(--card-shadow);
-        }
-
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .chart-header h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .table-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 24px;
-            box-shadow: var(--card-shadow);
-            overflow: hidden;
-        }
-
-        .table-container {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            text-align: left;
-            padding: 1rem;
-            color: #64748b;
-            font-weight: 600;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.9rem;
-        }
-
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid #f1f5f9;
-            color: #1e293b;
-            font-size: 0.9rem;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-done {
-            background: rgba(76, 201, 240, 0.1);
-            color: #00b4d8;
-        }
-
-        .status-pending {
-            background: rgba(247, 37, 133, 0.1);
-            color: #f72585;
-        }
-
-        .status-progress {
-            background: rgba(67, 97, 238, 0.1);
-            color: #4361ee;
-        }
-
-        .btn {
-            padding: 0.8rem 1.5rem;
-            border-radius: 12px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--secondary);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1.5px solid #e2e8f0;
-            color: #64748b;
-        }
-
-        .btn-outline:hover {
-            background: #f8f9fa;
-            color: #1e293b;
-        }
-
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-
-        .input-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            font-size: 0.9rem;
-            color: #475569;
-        }
-
-        .input-control {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border-radius: 12px;
-            border: 1.5px solid #e2e8f0;
-            transition: var(--transition);
-            font-size: 0.95rem;
-        }
-
-        .input-control:focus {
-            border-color: var(--primary);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-        }
-
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.5);
-            backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            padding: 1rem;
-        }
-
-        .modal.is-open {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            width: 100%;
-            max-width: 600px;
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            overflow: hidden;
-            animation: modalIn 0.3s ease-out;
-        }
-
-        .modal-content.large {
-            max-width: 900px;
-        }
-
-        @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: scale(0.95) translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #f1f5f9;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-footer {
-            padding: 1.5rem;
-            border-top: 1px solid #f1f5f9;
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-
-        .os-form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-
-        @media (max-width: 1024px) {
-            .charts-container {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar {
-                width: 80px;
-                padding: 2rem 0.5rem;
-            }
-
-            .brand-text,
-            .nav-link span {
-                display: none;
-            }
-
-            .main-content {
-                margin-left: 80px;
-                max-width: calc(100vw - 80px);
-            }
-        }
-
-        @media print {
-
-            .sidebar,
-            .btn,
-            .header-actions {
-                display: none !important;
-            }
-
-            .main-content {
-                margin-left: 0;
-                padding: 0;
-                max-width: 100%;
-            }
-
-            .view {
-                display: block !important;
-            }
-
-            .chart-card,
-            .stat-card {
-                box-shadow: none;
-                border: 1px solid #ddd;
-            }
-        }
-
-        /* Estilos para alertas */
-        .alert {
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 600;
-        }
-
-        .alert-danger {
-            background: rgba(239, 68, 68, 0.1);
-            color: #dc2626;
-            border-left: 4px solid #dc2626;
-        }
-
-        .alert i {
-            font-size: 1.2rem;
-        }
-
-        /* Badge de status melhorado */
-        .badge {
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge-atraso {
-            background: rgba(239, 68, 68, 0.1);
-            color: #dc2626;
-        }
-
-        .badge-pendente {
-            background: rgba(251, 191, 36, 0.1);
-            color: #f59e0b;
-        }
-
-        .badge-ok {
-            background: rgba(34, 197, 94, 0.1);
-            color: #16a34a;
-        }
-
-        /* Botões de ação */
-        .btn-editar {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-editar:hover {
-            background: var(--secondary);
-            transform: translateY(-2px);
-        }
-
-        .btn-detalhes {
-            background: var(--info);
-            color: white;
-        }
-
-        .btn-detalhes:hover {
-            background: #3b82f6;
-            transform: translateY(-2px);
-        }
-    </style>
+    <!-- Seu CSS -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
@@ -612,7 +46,7 @@
                     <span>Caixa</span>
                 </button>
                 <button class="nav-link" data-view="relatorios">
-                    <i class="fas fa-file-medical-alt"></i>
+                    <i class="fas fa-file-chart-line"></i>
                     <span>Relatórios</span>
                 </button>
             </nav>
@@ -620,7 +54,6 @@
 
         <!-- Main Content -->
         <main class="main-content">
-
             <!-- VIEW: DASHBOARD -->
             <section id="view-dashboard" class="view active">
                 <div class="header">
@@ -660,42 +93,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="charts-container">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>Fluxo de Caixa (7 dias)</h3>
-                        </div>
-                        <canvas id="revenueChart" height="100"></canvas>
-                    </div>
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>Status das OS</h3>
-                        </div>
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="table-card">
-                    <div class="chart-header">
-                        <h3>Ordens de Serviço Recentes</h3>
-                        <button class="btn btn-outline" onclick="goToView('os')">Ver Todas</button>
-                    </div>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Nº OS</th>
-                                    <th>Cliente</th>
-                                    <th>Veículo</th>
-                                    <th>Valor</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dash-recent-os"></tbody>
-                        </table>
-                    </div>
-                </div>
             </section>
 
             <!-- VIEW: CLIENTES -->
@@ -733,7 +130,6 @@
                 </div>
             </section>
 
-
             <!-- VIEW: OS -->
             <section id="view-os" class="view">
                 <div class="header">
@@ -742,30 +138,20 @@
                         <p>Acompanhamento de reparos</p>
                     </div>
                     <div class="header-actions">
-                        <button class="btn btn-primary" onclick="abrirModalOS()">
-                            <i class="fas fa-file-medical"></i> Abrir OS
+                        <button class="btn btn-primary" id="btn-nova-os">
+                            <i class="fas fa-file-medical"></i> Nova OS
                         </button>
                     </div>
                 </div>
                 <div class="table-card">
-                    <div class="chart-header" style="gap: 1rem;">
-                        <input type="text" id="os-busca" class="input-control" placeholder="Buscar OS..."
-                            oninput="renderOSTabela()">
-                        <select id="os-filtro-status" class="input-control" onchange="renderOSTabela()">
-                            <option value="">Todos os Status</option>
-                            <option value="aberto">Aberto</option>
-                            <option value="em_andamento">Em Andamento</option>
-                            <option value="concluido">Concluído</option>
-                        </select>
-                    </div>
                     <div class="table-container">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Nº</th>
-                                    <th>Data</th>
+                                    <th>Nº OS</th>
                                     <th>Cliente</th>
                                     <th>Veículo</th>
+                                    <th>Data</th>
                                     <th>Valor</th>
                                     <th>Status</th>
                                     <th>Ações</th>
@@ -785,10 +171,12 @@
                         <p>Entradas e saídas</p>
                     </div>
                     <div class="header-actions">
-                        <button class="btn btn-success" onclick="abrirModalCaixa('entrada')"><i
-                                class="fas fa-arrow-down"></i> Entrada</button>
-                        <button class="btn btn-danger" onclick="abrirModalCaixa('saida')"><i
-                                class="fas fa-arrow-up"></i> Saída</button>
+                        <button class="btn btn-success" id="btn-entrada">
+                            <i class="fas fa-arrow-down"></i> Entrada
+                        </button>
+                        <button class="btn btn-danger" id="btn-saida">
+                            <i class="fas fa-arrow-up"></i> Saída
+                        </button>
                     </div>
                 </div>
                 <div class="dashboard-grid">
@@ -820,7 +208,6 @@
                                     <th>Tipo</th>
                                     <th>Descrição</th>
                                     <th>Valor</th>
-                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="caixa-tbody"></tbody>
@@ -829,20 +216,16 @@
                 </div>
             </section>
 
-            <!-- VIEW: RELATORIOS -->
+            <!-- VIEW: RELATÓRIOS -->
             <section id="view-relatorios" class="view">
                 <div class="header">
                     <div class="header-title">
                         <h2>Relatórios</h2>
                         <p>Análise de performance</p>
                     </div>
-                    <div class="header-actions">
-                        <button class="btn btn-outline" onclick="window.print()"><i class="fas fa-file-pdf"></i>
-                            PDF</button>
-                    </div>
                 </div>
                 <div class="table-card">
-                    <div id="rel-summary" class="dashboard-grid"></div>
+                    <p>Módulo de relatórios em desenvolvimento...</p>
                 </div>
             </section>
         </main>
@@ -850,308 +233,603 @@
 
     <!-- MODAL CLIENTE -->
     <div id="modal-cliente" class="modal">
+        <div class="modal__backdrop"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modal-cliente-titulo">Cliente</h3><button onclick="fecharModal('modal-cliente')">×</button>
+                <h3 id="modal-cliente-titulo">Novo Cliente</h3>
+                <button type="button" class="btn btn-outline" style="padding: 0.5rem 1rem;"
+                    id="btn-fechar-modal-cliente">×</button>
             </div>
             <form id="form-cliente">
                 <div class="modal-body">
                     <input type="hidden" id="cliente-id">
-                    <div class="input-group"><label>ID do Cliente</label><input type="text" id="cliente-id-sequencial"
-                            class="input-control" disabled style="background:#f1f5f9;"></div>
-                    <div class="input-group"><label>Nome *</label><input type="text" id="cliente-nome"
-                            class="input-control" required></div>
-                    <div class="os-form-grid">
-                        <div class="input-group"><label>CPF/CNPJ</label><input type="text" id="cliente-documento"
-                                class="input-control"></div>
-                        <div class="input-group"><label>Telefone</label><input type="text" id="cliente-telefone"
-                                class="input-control"></div>
+
+                    <div class="input-group">
+                        <label>Nome *</label>
+                        <input type="text" id="cliente-nome" class="input-control" required>
                     </div>
-                    <div class="input-group"><label>Email</label><input type="email" id="cliente-email"
-                            class="input-control"></div>
-                    <div class="input-group"><label>Endereço</label><input type="text" id="cliente-endereco"
-                            class="input-control"></div>
+
                     <div class="os-form-grid">
-                        <div class="input-group"><label>Veículo (Modelo)</label><input type="text"
-                                id="cliente-veiculo-modelo" class="input-control"></div>
-                        <div class="input-group"><label>Ano</label><input type="text" id="cliente-veiculo-ano"
-                                class="input-control"></div>
+                        <div class="input-group">
+                            <label>Telefone</label>
+                            <input type="text" id="cliente-telefone" class="input-control">
+                        </div>
+                        <div class="input-group">
+                            <label>CPF/CNPJ</label>
+                            <input type="text" id="cliente-documento" class="input-control">
+                        </div>
                     </div>
-                    <div class="input-group"><label>Placa do Veículo</label><input type="text"
-                            id="cliente-veiculo-placa" class="input-control" placeholder="ABC-1234"></div>
-                    <div class="input-group"><label>Observações</label><textarea id="cliente-observacoes"
-                            class="input-control" rows="2"></textarea></div>
+
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" id="cliente-email" class="input-control">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Endereço</label>
+                        <input type="text" id="cliente-endereco" class="input-control">
+                    </div>
+
+                    <div class="os-form-grid">
+                        <div class="input-group">
+                            <label>Veículo (Modelo)</label>
+                            <input type="text" id="cliente-veiculo-modelo" class="input-control">
+                        </div>
+                        <div class="input-group">
+                            <label>Ano</label>
+                            <input type="text" id="cliente-veiculo-ano" class="input-control">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Placa</label>
+                        <input type="text" id="cliente-veiculo-placa" class="input-control" placeholder="ABC-1234">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Observações</label>
+                        <textarea id="cliente-observacoes" class="input-control" rows="3"></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline"
-                        onclick="fecharModal('modal-cliente')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" class="btn btn-outline" id="btn-cancelar-cliente">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Cliente</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL DETALHES CLIENTE -->
-    <div id="modal-cliente-detalhes" class="modal">
+    <!-- MODAL DETALHES DO CLIENTE -->
+    <div id="modal-detalhes-cliente" class="modal">
+        <div class="modal__backdrop"></div>
         <div class="modal-content large">
             <div class="modal-header">
-                <h3>Detalhes do Cliente</h3><button id="btn-fechar-detalhes-cliente"
-                    onclick="fecharModal('modal-cliente-detalhes')">×</button>
+                <h3><i class="fas fa-user-circle"></i> Detalhes do Cliente</h3>
+                <button type="button" class="btn btn-outline" style="padding: 0.5rem 1rem;"
+                    id="btn-fechar-detalhes">×</button>
             </div>
             <div class="modal-body">
-                <!-- Alerta de Atraso -->
-                <div id="det-cliente-alerta-atraso" style="display:none; margin-bottom:1.5rem;"></div>
-
-                <!-- Informações do Cliente -->
-                <div class="table-card" style="margin-bottom:1.5rem;">
-                    <h4 style="margin-bottom:1rem; color:var(--primary);"><i class="fas fa-user-circle"></i> Informações
-                        do Cliente</h4>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-                        <div><strong>ID:</strong> <span id="det-cliente-id-seq"></span></div>
-                        <div><strong>Nome:</strong> <span id="det-cliente-nome"></span></div>
-                        <div><strong>CPF/CNPJ:</strong> <span id="det-cliente-documento"></span></div>
-                        <div><strong>Placa:</strong> <span id="det-cliente-placa"></span></div>
-                        <div><strong>Veículo:</strong> <span id="det-cliente-veiculo-info"></span></div>
-                        <div><strong>Contato:</strong> <span id="det-cliente-contato"></span></div>
-                    </div>
-                    <div style="margin-top:1rem;">
-                        <div><strong>Endereço:</strong> <span id="det-cliente-endereco"></span></div>
-                        <div style="margin-top:0.5rem;"><strong>Observações:</strong> <span id="det-cliente-obs"></span>
+                <!-- Informações Principais -->
+                <div class="cliente-info-card">
+                    <div class="cliente-info-header">
+                        <div class="cliente-avatar">
+                            <i class="fas fa-user"></i>
                         </div>
+                        <div class="cliente-info-main">
+                            <h2 id="detalhe-nome">-</h2>
+                            <p id="detalhe-id-sequencial" class="cliente-id-badge">-</p>
+                        </div>
+                        <div class="cliente-actions-quick">
+                            <button class="btn btn-primary btn-sm" id="btn-editar-do-detalhe">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="btn btn-success btn-sm" id="btn-nova-os-do-detalhe">
+                                <i class="fas fa-plus"></i> Nova OS
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Grid de Informações -->
+                    <div class="cliente-info-grid">
+                        <div class="info-item">
+                            <i class="fas fa-phone"></i>
+                            <div>
+                                <span class="info-label">Telefone</span>
+                                <span class="info-value" id="detalhe-telefone">-</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <span class="info-label">Email</span>
+                                <span class="info-value" id="detalhe-email">-</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-id-card"></i>
+                            <div>
+                                <span class="info-label">CPF/CNPJ</span>
+                                <span class="info-value" id="detalhe-documento">-</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div>
+                                <span class="info-label">Endereço</span>
+                                <span class="info-value" id="detalhe-endereco">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Veículo -->
+                    <div class="veiculo-card" id="veiculo-info-container">
+                        <h4><i class="fas fa-car"></i> Veículo</h4>
+                        <div class="veiculo-details">
+                            <div class="veiculo-item">
+                                <span class="info-label">Modelo</span>
+                                <span class="info-value" id="detalhe-veiculo-modelo">-</span>
+                            </div>
+                            <div class="veiculo-item">
+                                <span class="info-label">Ano</span>
+                                <span class="info-value" id="detalhe-veiculo-ano">-</span>
+                            </div>
+                            <div class="veiculo-item">
+                                <span class="info-label">Placa</span>
+                                <span class="info-value" id="detalhe-veiculo-placa">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observações -->
+                    <div class="observacoes-card" id="observacoes-container">
+                        <h4><i class="fas fa-sticky-note"></i> Observações</h4>
+                        <p id="detalhe-observacoes">-</p>
                     </div>
                 </div>
 
-                <!-- Histórico de Ordens de Serviço -->
-                <div class="table-card">
-                    <h4 style="margin-bottom:1rem; color:var(--primary);"><i class="fas fa-history"></i> Histórico de
-                        Serviços</h4>
-                    <div class="table-container">
+                <!-- Histórico de OS -->
+                <div class="historico-section">
+                    <div class="historico-header">
+                        <h3><i class="fas fa-history"></i> Histórico de Ordens de Serviço</h3>
+                        <div class="historico-stats">
+                            <span class="stat-badge stat-total">
+                                <i class="fas fa-clipboard-list"></i>
+                                <strong id="stat-total-os">0</strong> Total
+                            </span>
+                            <span class="stat-badge stat-pendente">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <strong id="stat-pendente-os">0</strong> Pendentes
+                            </span>
+                            <span class="stat-badge stat-valor">
+                                <i class="fas fa-dollar-sign"></i>
+                                <strong id="stat-valor-total">R$ 0,00</strong>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Tabela de Histórico -->
+                    <div class="historico-table">
                         <table>
                             <thead>
                                 <tr>
                                     <th>Nº OS</th>
                                     <th>Data</th>
-                                    <th>Descrição</th>
+                                    <th>Serviço</th>
                                     <th>Valor</th>
+                                    <th>Pagamento</th>
                                     <th>Status</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="det-cliente-os-tbody"></tbody>
+                            <tbody id="historico-tbody"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline"
-                    onclick="fecharModal('modal-cliente-detalhes')">Fechar</button>
-            </div>
         </div>
     </div>
 
-    <!-- MODAL OS -->
+    <!-- MODAL NOVA/EDITAR OS -->
     <div id="modal-os" class="modal">
+        <div class="modal__backdrop"></div>
         <div class="modal-content large">
             <div class="modal-header">
-                <h3>Ordem de Serviço</h3><button onclick="fecharModal('modal-os')">&times;</button>
+                <h3 id="modal-os-titulo"><i class="fas fa-file-invoice"></i> Nova Ordem de Serviço</h3>
             </div>
             <form id="form-os">
                 <div class="modal-body">
                     <input type="hidden" id="os-id">
-                    <div class="os-form-grid">
-                        <div class="input-group"><label>Cliente *</label><select id="os-cliente-id"
-                                class="input-control" required></select></div>
-                        <div class="input-group"><label>Veículo</label><input type="text" id="os-veiculo"
-                                class="input-control"></div>
-                        <div class="input-group"><label>Data</label><input type="date" id="os-data-abertura"
-                                class="input-control"></div>
-                        <div class="input-group"><label>Status</label>
-                            <select id="os-status" class="input-control">
-                                <option value="aberto">Aberto</option>
-                                <option value="em_andamento">Em Andamento</option>
-                                <option value="concluido">Concluído</option>
+
+                    <!-- Seção 1: Cliente e Veículo -->
+                    <div class="os-section">
+                        <h4><i class="fas fa-user"></i> Cliente e Veículo</h4>
+
+                        <div class="input-group">
+                            <label>Cliente *</label>
+                            <select id="os-cliente" class="input-control" required>
+                                <option value="">Selecione um cliente</option>
                             </select>
                         </div>
+
+                        <div class="os-form-grid">
+                            <div class="input-group">
+                                <label>Veículo (Modelo) *</label>
+                                <input type="text" id="os-veiculo-modelo" class="input-control"
+                                    placeholder="Ex: Fiat Uno" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Placa *</label>
+                                <input type="text" id="os-veiculo-placa" class="input-control" placeholder="ABC-1234"
+                                    required>
+                            </div>
+                        </div>
+
+                        <div class="os-form-grid">
+                            <div class="input-group">
+                                <label>Ano</label>
+                                <input type="text" id="os-veiculo-ano" class="input-control" placeholder="2020">
+                            </div>
+                            <div class="input-group">
+                                <label>KM Atual</label>
+                                <input type="number" id="os-km" class="input-control" placeholder="50000">
+                            </div>
+                        </div>
                     </div>
-                    <div class="input-group"><label>Valor Total (R*) *</label><input type="number" step="0.01"
-                            id="os-valor-total" class="input-control" required></div>
-                    <div class="input-group"><label>Descrição</label><textarea id="os-descricao" class="input-control"
-                            rows="2"></textarea></div>
+
+                    <!-- Seção 2: Serviço -->
+                    <div class="os-section">
+                        <h4><i class="fas fa-wrench"></i> Serviço</h4>
+
+                        <div class="input-group">
+                            <label>Problema Relatado pelo Cliente *</label>
+                            <textarea id="os-problema" class="input-control" rows="3"
+                                placeholder="Descreva o problema relatado pelo cliente..." required></textarea>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Diagnóstico Técnico</label>
+                            <textarea id="os-diagnostico" class="input-control" rows="3"
+                                placeholder="Diagnóstico feito pela oficina..."></textarea>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Serviços a Realizar *</label>
+                            <textarea id="os-servicos" class="input-control" rows="4"
+                                placeholder="Liste os serviços que serão realizados..." required></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Seção 3: Peças -->
+                    <div class="os-section">
+                        <h4><i class="fas fa-cog"></i> Peças e Materiais</h4>
+
+                        <div class="input-group">
+                            <label>Peças Necessárias</label>
+                            <textarea id="os-pecas" class="input-control" rows="3"
+                                placeholder="Liste as peças necessárias (ex: Filtro de óleo, Pastilha de freio...)"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Seção 4: Valores e Prazos -->
+                    <div class="os-section">
+                        <h4><i class="fas fa-dollar-sign"></i> Valores e Prazos</h4>
+
+                        <div class="os-form-grid">
+                            <div class="input-group">
+                                <label>Valor da Mão de Obra (R$)</label>
+                                <input type="number" id="os-valor-mao-obra" class="input-control" placeholder="0.00"
+                                    step="0.01" min="0">
+                            </div>
+                            <div class="input-group">
+                                <label>Valor das Peças (R$)</label>
+                                <input type="number" id="os-valor-pecas" class="input-control" placeholder="0.00"
+                                    step="0.01" min="0">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Valor Total (R$) *</label>
+                            <input type="number" id="os-valor-total" class="input-control" placeholder="0.00"
+                                step="0.01" min="0" required>
+                        </div>
+
+                        <div class="os-form-grid">
+                            <div class="input-group">
+                                <label>Data de Abertura *</label>
+                                <input type="date" id="os-data-abertura" class="input-control" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Previsão de Entrega</label>
+                                <input type="date" id="os-data-previsao" class="input-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção 5: Pagamento e Status -->
+                    <div class="os-section">
+                        <h4><i class="fas fa-credit-card"></i> Pagamento e Status</h4>
+
+                        <div class="os-form-grid">
+                            <div class="input-group">
+                                <label>Forma de Pagamento *</label>
+                                <select id="os-forma-pagamento" class="input-control" required>
+                                    <option value="">Selecione</option>
+                                    <option value="dinheiro">Dinheiro</option>
+                                    <option value="pix">PIX</option>
+                                    <option value="debito">Cartão de Débito</option>
+                                    <option value="credito">Cartão de Crédito</option>
+                                    <option value="boleto">Boleto</option>
+                                    <option value="parcelado">Parcelado</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Status *</label>
+                                <select id="os-status" class="input-control" required>
+                                    <option value="pendente">Pendente</option>
+                                    <option value="em_andamento">Em Andamento</option>
+                                    <option value="aguardando_pecas">Aguardando Peças</option>
+                                    <option value="pronto">Pronto para Retirada</option>
+                                    <option value="concluido">Concluído</option>
+                                    <option value="cancelado">Cancelado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Parcelamento (aparece apenas se "parcelado" for selecionado) -->
+                        <div id="parcelamento-container" style="display: none; margin-top: 1rem;">
+                            <div class="os-form-grid">
+                                <div class="input-group">
+                                    <label>Número de Parcelas *</label>
+                                    <select id="os-num-parcelas" class="input-control">
+                                        <option value="">Selecione</option>
+                                        <option value="2">2x</option>
+                                        <option value="3">3x</option>
+                                        <option value="4">4x</option>
+                                        <option value="5">5x</option>
+                                        <option value="6">6x</option>
+                                        <option value="7">7x</option>
+                                        <option value="8">8x</option>
+                                        <option value="9">9x</option>
+                                        <option value="10">10x</option>
+                                        <option value="11">11x</option>
+                                        <option value="12">12x</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Data da 1ª Parcela</label>
+                                    <input type="date" id="os-data-primeira-parcela" class="input-control">
+                                </div>
+                            </div>
+
+                            <div class="input-group" style="margin-top: 1rem;">
+                                <button type="button" class="btn btn-secondary" id="btn-gerar-parcelas">
+                                    <i class="fas fa-calculator"></i> Gerar Parcelas
+                                </button>
+                            </div>
+
+                            <!-- Tabela de Parcelas -->
+                            <div id="parcelas-table-container" style="display: none; margin-top: 1.5rem;">
+                                <h5 style="margin-bottom: 1rem; color: #1e293b;">
+                                    <i class="fas fa-list"></i> Detalhamento das Parcelas
+                                </h5>
+                                <div style="overflow-x: auto;">
+                                    <table class="parcelas-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Parcela</th>
+                                                <th>Data</th>
+                                                <th>Descrição</th>
+                                                <th>Forma</th>
+                                                <th>Status</th>
+                                                <th>Valor</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="parcelas-tbody"></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="5" style="text-align: right; font-weight: 600;">TOTAL:</td>
+                                                <td id="parcelas-total"
+                                                    style="font-weight: 700; color: var(--primary);">R$ 0,00</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-top: 1rem;">
+                            <label>Garantia (dias)</label>
+                            <input type="number" id="os-garantia" class="input-control" placeholder="90" min="0">
+                        </div>
+                    </div>
+
+                    <!-- Seção 6: Observações -->
+                    <div class="os-section">
+                        <h4><i class="fas fa-comment"></i> Observações</h4>
+
+                        <div class="input-group">
+                            <label>Observações Internas</label>
+                            <textarea id="os-observacoes" class="input-control" rows="3"
+                                placeholder="Observações internas da oficina..."></textarea>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="fecharModal('modal-os')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar OS</button>
+                    <button type="button" class="btn btn-outline" id="btn-cancelar-os">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar OS
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL CAIXA -->
-    <div id="modal-caixa" class="modal">
-        <div class="modal-content">
+    <!-- MODAL DETALHES DA OS -->
+    <div id="modal-detalhes-os" class="modal">
+        <div class="modal__backdrop"></div>
+        <div class="modal-content large">
             <div class="modal-header">
-                <h3 id="modal-caixa-titulo">Lançamento</h3><button onclick="fecharModal('modal-caixa')">&times;</button>
+                <h3><i class="fas fa-file-alt"></i> Detalhes da Ordem de Serviço</h3>
+                <button type="button" class="btn btn-outline" style="padding: 0.5rem 1rem;"
+                    id="btn-fechar-detalhes-os">×</button>
             </div>
-            <form id="form-caixa">
-                <div class="modal-body">
-                    <input type="hidden" id="caixa-tipo">
-                    <div class="input-group"><label>Data</label><input type="date" id="caixa-data" class="input-control"
-                            required></div>
-                    <div class="input-group"><label>Descrição</label><input type="text" id="caixa-descricao"
-                            class="input-control" required></div>
-                    <div class="input-group"><label>Valor (R$)</label><input type="number" step="0.01" id="caixa-valor"
-                            class="input-control" required></div>
+            <div class="modal-body">
+                <div class="os-detalhes-container">
+                    <!-- Header da OS -->
+                    <div class="os-detalhes-header">
+                        <div class="os-numero-badge">
+                            <span class="os-label">OS Nº</span>
+                            <span class="os-numero" id="detalhes-os-numero">#000</span>
+                        </div>
+                        <div class="os-status-badge-large" id="detalhes-os-status-badge">
+                            <span class="status-badge status-pending">Pendente</span>
+                        </div>
+                        <div class="os-actions-detalhes">
+                            <button class="btn btn-primary btn-sm" id="btn-ver-cliente-da-os">
+                                <i class="fas fa-user"></i> Ver Cliente
+                            </button>
+                            <button class="btn btn-primary btn-sm" id="btn-editar-os-detalhes">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="btn btn-success btn-sm" id="btn-imprimir-os">
+                                <i class="fas fa-print"></i> Imprimir
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Informações do Cliente -->
+                    <div class="os-info-section">
+                        <h4><i class="fas fa-user"></i> Cliente</h4>
+                        <div class="info-grid-2col">
+                            <div>
+                                <span class="info-label">Nome:</span>
+                                <span class="info-value" id="detalhes-cliente-nome">-</span>
+                            </div>
+                            <div>
+                                <span class="info-label">Telefone:</span>
+                                <span class="info-value" id="detalhes-cliente-telefone">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informações do Veículo -->
+                    <div class="os-info-section">
+                        <h4><i class="fas fa-car"></i> Veículo</h4>
+                        <div class="info-grid-2col">
+                            <div>
+                                <span class="info-label">Modelo:</span>
+                                <span class="info-value" id="detalhes-veiculo-modelo">-</span>
+                            </div>
+                            <div>
+                                <span class="info-label">Placa:</span>
+                                <span class="info-value" id="detalhes-veiculo-placa">-</span>
+                            </div>
+                            <div>
+                                <span class="info-label">Ano:</span>
+                                <span class="info-value" id="detalhes-veiculo-ano">-</span>
+                            </div>
+                            <div>
+                                <span class="info-label">KM:</span>
+                                <span class="info-value" id="detalhes-km">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Serviço -->
+                    <div class="os-info-section">
+                        <h4><i class="fas fa-wrench"></i> Serviço</h4>
+                        <div class="info-text-block">
+                            <span class="info-label">Problema Relatado:</span>
+                            <p id="detalhes-problema">-</p>
+                        </div>
+                        <div class="info-text-block">
+                            <span class="info-label">Diagnóstico Técnico:</span>
+                            <p id="detalhes-diagnostico">-</p>
+                        </div>
+                        <div class="info-text-block">
+                            <span class="info-label">Serviços Realizados:</span>
+                            <p id="detalhes-servicos">-</p>
+                        </div>
+                        <div class="info-text-block">
+                            <span class="info-label">Peças Utilizadas:</span>
+                            <p id="detalhes-pecas">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Valores -->
+                    <div class="os-info-section os-valores-section">
+                        <h4><i class="fas fa-dollar-sign"></i> Valores</h4>
+                        <div class="valores-grid">
+                            <div class="valor-item">
+                                <span class="valor-label">Mão de Obra:</span>
+                                <span class="valor-value" id="detalhes-valor-mao-obra">R$ 0,00</span>
+                            </div>
+                            <div class="valor-item">
+                                <span class="valor-label">Peças:</span>
+                                <span class="valor-value" id="detalhes-valor-pecas">R$ 0,00</span>
+                            </div>
+                            <div class="valor-item valor-total">
+                                <span class="valor-label">TOTAL:</span>
+                                <span class="valor-value" id="detalhes-valor-total">R$ 0,00</span>
+                            </div>
+                            <div class="valor-item">
+                                <span class="valor-label">Pago:</span>
+                                <span class="valor-value" id="detalhes-valor-pago">R$ 0,00</span>
+                            </div>
+                            <div class="valor-item valor-restante">
+                                <span class="valor-label">Restante:</span>
+                                <span class="valor-value" id="detalhes-valor-restante">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Datas e Informações Adicionais -->
+                    <div class="os-info-section">
+                        <h4><i class="fas fa-calendar"></i> Datas e Informações</h4>
+                        <div class="info-grid-2col">
+                            <div>
+                                <span class="info-label">Data de Abertura:</span>
+                                <span class="info-value" id="detalhes-data-abertura">-</span>
+                            </div>
+                            <div>
+                                <span class="info-label">Previsão de Entrega:</span>
+                                <span class="info-value" id="detalhes-data-previsao">-</span>
+                            </div>
+                            <div>
+                                <span class="info-label">Forma de Pagamento:</span>
+                                <span class="info-value" id="detalhes-forma-pagamento">-</span>
+                            </div>
+                            <div>
+                                <span class="info-label">Garantia:</span>
+                                <span class="info-value" id="detalhes-garantia">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observações -->
+                    <div class="os-info-section" id="detalhes-observacoes-section">
+                        <h4><i class="fas fa-comment"></i> Observações</h4>
+                        <p id="detalhes-observacoes">-</p>
+                    </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="fecharModal('modal-caixa')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Lançar</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
-    <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:9999;"></div>
-
-    <script>
-        // --- DATA LAYER ---
-        const KEYS = { CLIENTES: 'om_clientes', OS: 'om_os', CAIXA: 'om_caixa' };
-        let db = {
-            clientes: JSON.parse(localStorage.getItem(KEYS.CLIENTES)) || [],
-            os: JSON.parse(localStorage.getItem(KEYS.OS)) || [],
-            caixa: JSON.parse(localStorage.getItem(KEYS.CAIXA)) || []
-        };
-        const save = () => {
-            localStorage.setItem(KEYS.CLIENTES, JSON.stringify(db.clientes));
-            localStorage.setItem(KEYS.OS, JSON.stringify(db.os));
-            localStorage.setItem(KEYS.CAIXA, JSON.stringify(db.caixa));
-        };
-
-        // --- UTILS ---
-        const fmtBRL = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
-        const fmtDate = d => d ? d.split('-').reverse().join('/') : '-';
-        const isoToday = () => new Date().toISOString().split('T')[0];
-
-        function toast(msg, type = 'success') {
-            const el = document.createElement('div');
-            el.style.cssText = `background:${type === 'success' ? '#10b981' : '#ef4444'}; color:white; padding:12px 24px; border-radius:12px; margin-bottom:10px; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.1);`;
-            el.textContent = msg;
-            document.getElementById('toast-container').appendChild(el);
-            setTimeout(() => el.remove(), 3000);
-        }
-
-        // --- NAVIGATION ---
-        function goToView(v) {
-            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-            document.getElementById(`view-${v}`).classList.add('active');
-            document.querySelector(`[data-view="${v}"]`).classList.add('active');
-
-            if (v === 'dashboard') updateDash();
-            if (v === 'clientes') {
-                // Aguardar o próximo tick para garantir que a view está renderizada
-                setTimeout(() => {
-                    if (typeof window.initClientes === 'function') {
-                        window.initClientes();
-                    }
-                }, 0);
-            }
-            if (v === 'os') renderOSTabela();
-            if (v === 'caixa') renderCaixa();
-        }
 
 
-        // --- MODALS ---
-        function fecharModal(id) { document.getElementById(id).classList.remove('is-open'); }
+    <!-- Toast Container -->
+    <div id="toast-container" style="position:fixed; bottom: 20px; right:20px; z-index:9999;"></div>
 
-        // --- OS ---
-        function abrirModalOS(id = null) {
-            const sel = document.getElementById('os-cliente-id');
-            sel.innerHTML = db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
-            const f = document.getElementById('form-os'); f.reset();
-            document.getElementById('os-data-abertura').value = isoToday();
-            if (id) { /* implement edit if needed */ }
-            document.getElementById('modal-os').classList.add('is-open');
-        }
-        document.getElementById('form-os').onsubmit = e => {
-            e.preventDefault();
-            const os = {
-                id: Date.now().toString(),
-                numero: db.os.length + 1,
-                clienteId: document.getElementById('os-cliente-id').value,
-                veiculo: document.getElementById('os-veiculo').value,
-                dataAbertura: document.getElementById('os-data-abertura').value,
-                status: document.getElementById('os-status').value,
-                valorTotal: parseFloat(document.getElementById('os-valor-total').value)
-            };
-            db.os.push(os);
-            if (os.status === 'concluido') db.caixa.push({ id: Date.now() + '_c', tipo: 'entrada', data: os.dataAbertura, descricao: 'OS #' + os.numero, valor: os.valorTotal });
-            save(); fecharModal('modal-os'); renderOSTabela(); toast('OS Criada!');
-        };
-        function renderOSTabela() {
-            const tb = document.getElementById('os-tbody'); tb.innerHTML = '';
-            db.os.forEach(o => {
-                const c = db.clientes.find(x => x.id === o.clienteId);
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>#${o.numero}</td><td>${fmtDate(o.dataAbertura)}</td><td>${c ? c.nome : '-'}</td><td>${o.veiculo}</td><td>${fmtBRL(o.valorTotal)}</td><td>${o.status}</td><td>-</td>`;
-                tb.appendChild(tr);
-            });
-        }
-
-        // --- CAIXA ---
-        function abrirModalCaixa(t) {
-            document.getElementById('caixa-tipo').value = t;
-            document.getElementById('caixa-data').value = isoToday();
-            document.getElementById('modal-caixa-titulo').textContent = t === 'entrada' ? 'Nova Entrada' : 'Nova Saída';
-            document.getElementById('modal-caixa').classList.add('is-open');
-        }
-        document.getElementById('form-caixa').onsubmit = e => {
-            e.preventDefault();
-            const mov = {
-                id: Date.now().toString(),
-                tipo: document.getElementById('caixa-tipo').value,
-                data: document.getElementById('caixa-data').value,
-                descricao: document.getElementById('caixa-descricao').value,
-                valor: parseFloat(document.getElementById('caixa-valor').value)
-            };
-            db.caixa.push(mov); save(); fecharModal('modal-caixa'); renderCaixa(); toast('Lançado!');
-        };
-        function renderCaixa() {
-            const tb = document.getElementById('caixa-tbody'); tb.innerHTML = '';
-            let ent = 0, sai = 0;
-            db.caixa.forEach(m => {
-                if (m.tipo === 'entrada') ent += m.valor; else sai += m.valor;
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${fmtDate(m.data)}</td><td>${m.tipo}</td><td>${m.descricao}</td><td>${fmtBRL(m.valor)}</td><td>-</td>`;
-                tb.appendChild(tr);
-            });
-            document.getElementById('caixa-total-entradas').textContent = fmtBRL(ent);
-            document.getElementById('caixa-total-saidas').textContent = fmtBRL(sai);
-            document.getElementById('caixa-saldo').textContent = fmtBRL(ent - sai);
-        }
-
-        let revenueChartInstance = null;
-        let statusChartInstance = null;
-
-        // --- DASHBOARD ---
-        function updateDash() {
-            document.getElementById('current-date-display').textContent = new Date().toLocaleDateString();
-            const rec = db.caixa.filter(m => m.tipo === 'entrada').reduce((a, b) => a + b.valor, 0);
-            document.getElementById('dash-receita').textContent = fmtBRL(rec);
-            document.getElementById('dash-os-concluidas').textContent = db.os.filter(o => o.status === 'concluido').length;
-            document.getElementById('dash-novos-clientes').textContent = db.clientes.length;
-            document.getElementById('dash-os-pendentes').textContent = db.os.filter(o => o.status !== 'concluido').length;
-
-            const ctx1 = document.getElementById('revenueChart').getContext('2d');
-            new Chart(ctx1, { type: 'line', data: { labels: ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'], datasets: [{ label: 'Fluxo', data: [10, 20, 15, 30, 25, 40, 35], borderColor: '#4361ee' }] } });
-            const ctx2 = document.getElementById('statusChart').getContext('2d');
-            new Chart(ctx2, { type: 'doughnut', data: { labels: ['OK', 'Ab', 'And'], datasets: [{ data: [5, 2, 3], backgroundColor: ['#4cc9f0', '#4361ee', '#f72585'] }] } });
-        }
-
-        window.onload = () => { updateDash(); };
-    </script>
-
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/router.js"></script>
     <script src="js/clientes.js"></script>
-    <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:9999;"></div>
+    <script src="js/os.js"></script>
+    <script src="js/caixa.js"></script>
+    <script src="js/dashboard.js"></script>
 </body>
 
 </html>

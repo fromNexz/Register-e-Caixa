@@ -1,678 +1,780 @@
-// js/os.js - Módulo de Ordens de Serviço Redesenhado
-
-// Utilidades
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function addMonthsISO(dateISO, months) {
-  const d = new Date(dateISO);
-  d.setMonth(d.getMonth() + months);
-  return d.toISOString().slice(0, 10);
-}
-
-function formatCurrency(v) {
-  return `R$ ${Number(v || 0).toFixed(2).replace('.', ',')}`;
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  const parts = dateStr.split('-');
-  if (parts.length !== 3) return dateStr;
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
-}
-
-function getStatusLabel(status) {
-  const labels = {
-    'aberto': 'Aberto',
-    'em_andamento': 'Em andamento',
-    'concluido': 'Concluído',
-    'cancelado': 'Cancelado'
-  };
-  return labels[status] || status;
-}
-
-// Atualiza contadores do resumo
-function atualizarContadoresOS() {
-  const totalEl = document.getElementById('os-total-count');
-  const openEl = document.getElementById('os-open-count');
-  const progressEl = document.getElementById('os-progress-count');
-  const doneEl = document.getElementById('os-done-count');
-
-  if (totalEl) totalEl.textContent = ordensServico.length;
-  if (openEl) openEl.textContent = ordensServico.filter(os => os.status === 'aberto').length;
-  if (progressEl) progressEl.textContent = ordensServico.filter(os => os.status === 'em_andamento').length;
-  if (doneEl) doneEl.textContent = ordensServico.filter(os => os.status === 'concluido').length;
-}
-
-// Calcula status de pagamento de uma OS
-function calcularStatusPagamento(osId) {
-  const parcelasOS = parcelas.filter(p => p.osId === osId);
-  if (parcelasOS.length === 0) return { status: 'pending', label: 'Sem parcelas', paid: 0, total: 0 };
-
-  const totalParcelas = parcelasOS.length;
-  const parcelasPagas = parcelasOS.filter(p => p.dataPagamento).length;
-
-  if (parcelasPagas === 0) {
-    return { status: 'pending', label: `0/${totalParcelas} pagas`, paid: 0, total: totalParcelas };
-  } else if (parcelasPagas === totalParcelas) {
-    return { status: 'paid', label: 'Pago', paid: parcelasPagas, total: totalParcelas };
-  } else {
-    return { status: 'partial', label: `${parcelasPagas}/${totalParcelas} pagas`, paid: parcelasPagas, total: totalParcelas };
-  }
-}
-
-// Preenche select de clientes
-function preencherSelectClientesOS() {
-  const select = document.getElementById('os-cliente-id');
-  if (!select) return;
-
-  select.innerHTML = '<option value="">Selecione um cliente...</option>';
-
-  clientes.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.nome;
-    select.appendChild(opt);
-  });
-}
-
-// Auto-preenche veículo ao selecionar cliente
-function ligarPreenchimentoVeiculoAutomatico() {
-  const select = document.getElementById('os-cliente-id');
-  const inputVeiculo = document.getElementById('os-veiculo');
-  if (!select || !inputVeiculo) return;
-
-  select.addEventListener('change', () => {
-    const cliente = clientes.find(c => c.id === select.value);
-    if (!cliente) {
-      inputVeiculo.value = '';
-      return;
-    }
-
-    const partes = [];
-    if (cliente.veiculoModelo) partes.push(cliente.veiculoModelo);
-    if (cliente.veiculoAno) partes.push(cliente.veiculoAno);
-    if (cliente.veiculoPlaca) partes.push(cliente.veiculoPlaca);
-
-    inputVeiculo.value = partes.join(' - ');
-  });
-}
-
-// Atualiza total das parcelas no header
-function atualizarTotalParcelas() {
-  const container = document.getElementById('os-parcelas-tbody');
-  const totalEl = document.getElementById('os-parcelas-total');
-  if (!container || !totalEl) return;
-
-  const inputs = container.querySelectorAll('.os-parcela-value');
-  let total = 0;
-  inputs.forEach(input => {
-    total += Number(input.value || 0);
-  });
-
-  totalEl.textContent = `Total: ${formatCurrency(total)}`;
-}
-
-// Gera parcelas no modal
-function gerarParcelasParaModal() {
-  const valorTotal = Number(document.getElementById('os-valor-total').value || 0);
-  const numParcelas = Number(document.getElementById('os-numero-parcelas').value || 1);
-  const dataPrimeira = document.getElementById('os-data-primeira-parcela').value || todayISO();
-  const container = document.getElementById('os-parcelas-tbody');
-
-  if (!container) return;
-
-  if (valorTotal <= 0) {
-    showToast('Informe o valor total da OS.', 'error');
-    return;
-  }
-
-  if (numParcelas <= 0 || numParcelas > 48) {
-    showToast('Número de parcelas deve ser entre 1 e 48.', 'error');
-    return;
-  }
-
-  const totalCent = Math.round(valorTotal * 100);
-  const base = Math.floor(totalCent / numParcelas);
-  const resto = totalCent - base * numParcelas;
-
-  container.innerHTML = '';
-
-  for (let i = 0; i < numParcelas; i++) {
-    let valorParcelaCent = base;
-    if (i === numParcelas - 1) valorParcelaCent += resto;
-    const valorParcela = (valorParcelaCent / 100).toFixed(2);
-    const dataVenc = addMonthsISO(dataPrimeira, i);
-
-    const item = document.createElement('div');
-    item.className = 'os-parcela-item';
-    item.innerHTML = `
-      <span class="os-parcela-num">${i + 1}</span>
-      <input type="date" class="os-parcela-date" value="${dataVenc}" />
-      <input type="number" step="0.01" class="os-parcela-value" value="${valorParcela}" />
-      <div class="os-parcela-checkbox">
-        <input type="checkbox" class="os-parcela-pago" title="Marcar como pago" />
-      </div>
-      <input type="date" class="os-parcela-pay-date" disabled />
-      <select class="os-parcela-forma" disabled>
-        <option value="">Forma pgto</option>
-        <option value="pix">Pix</option>
-        <option value="debito">Débito</option>
-        <option value="credito">Crédito</option>
-        <option value="boleto">Boleto</option>
-        <option value="dinheiro">Dinheiro</option>
-        <option value="outro">Outro</option>
-      </select>
-    `;
-    container.appendChild(item);
-
-    // Event listeners
-    const chk = item.querySelector('.os-parcela-pago');
-    const dtPag = item.querySelector('.os-parcela-pay-date');
-    const forma = item.querySelector('.os-parcela-forma');
-    const valorInput = item.querySelector('.os-parcela-value');
-
-    chk.addEventListener('change', () => {
-      const on = chk.checked;
-      dtPag.disabled = !on;
-      forma.disabled = !on;
-      if (on && !dtPag.value) dtPag.value = todayISO();
-      item.classList.toggle('os-parcela-item--paid', on);
-    });
-
-    valorInput.addEventListener('input', atualizarTotalParcelas);
-  }
-
-  atualizarTotalParcelas();
-  showToast(`${numParcelas} parcela(s) gerada(s)!`, 'success');
-}
-
-// Carrega parcelas existentes no modal
-function carregarParcelasOSNoModal(osId) {
-  const container = document.getElementById('os-parcelas-tbody');
-  if (!container) return;
-
-  container.innerHTML = '';
-
-  const parcelasOS = parcelas
-    .filter(p => p.osId === osId)
-    .sort((a, b) => a.numeroParcela - b.numeroParcela);
-
-  if (!parcelasOS.length) {
-    container.innerHTML = `
-      <div class="os-parcela-empty">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-          <line x1="1" y1="10" x2="23" y2="10"></line>
-        </svg>
-        <p>Nenhuma parcela gerada</p>
-        <span>Preencha o valor e clique em "Gerar"</span>
-      </div>
-    `;
-    atualizarTotalParcelas();
-    return;
-  }
-
-  parcelasOS.forEach(p => {
-    const isPaid = !!p.dataPagamento;
-    const item = document.createElement('div');
-    item.className = `os-parcela-item ${isPaid ? 'os-parcela-item--paid' : ''}`;
-    item.innerHTML = `
-      <span class="os-parcela-num">${p.numeroParcela}</span>
-      <input type="date" class="os-parcela-date" value="${p.dataVencimento}" />
-      <input type="number" step="0.01" class="os-parcela-value" value="${p.valorParcela}" />
-      <div class="os-parcela-checkbox">
-        <input type="checkbox" class="os-parcela-pago" ${isPaid ? 'checked' : ''} title="Marcar como pago" />
-      </div>
-      <input type="date" class="os-parcela-pay-date" ${isPaid ? '' : 'disabled'} value="${p.dataPagamento || ''}" />
-      <select class="os-parcela-forma" ${isPaid ? '' : 'disabled'}>
-        <option value="">Forma pgto</option>
-        <option value="pix">Pix</option>
-        <option value="debito">Débito</option>
-        <option value="credito">Crédito</option>
-        <option value="boleto">Boleto</option>
-        <option value="dinheiro">Dinheiro</option>
-        <option value="outro">Outro</option>
-      </select>
-    `;
-    container.appendChild(item);
-
-    // Set forma pagamento
-    const formaSelect = item.querySelector('.os-parcela-forma');
-    if (p.formaPagamento) formaSelect.value = p.formaPagamento;
-
-    // Event listeners
-    const chk = item.querySelector('.os-parcela-pago');
-    const dtPag = item.querySelector('.os-parcela-pay-date');
-    const forma = item.querySelector('.os-parcela-forma');
-    const valorInput = item.querySelector('.os-parcela-value');
-
-    chk.addEventListener('change', () => {
-      const on = chk.checked;
-      dtPag.disabled = !on;
-      forma.disabled = !on;
-      if (on && !dtPag.value) dtPag.value = todayISO();
-      item.classList.toggle('os-parcela-item--paid', on);
-    });
-
-    valorInput.addEventListener('input', atualizarTotalParcelas);
-  });
-
-  atualizarTotalParcelas();
-}
-
-// Abre modal de OS
-function abrirModalOS(os) {
-  const modal = document.getElementById('modal-os');
-  const titulo = document.getElementById('modal-os-titulo');
-  const numeroBadge = document.getElementById('os-numero-display');
-  const form = document.getElementById('form-os');
-
-  preencherSelectClientesOS();
-  ligarPreenchimentoVeiculoAutomatico();
-
-  if (os) {
-    titulo.textContent = 'Editar Ordem de Serviço';
-    numeroBadge.textContent = `OS #${os.numero}`;
-    document.getElementById('os-id').value = os.id;
-    document.getElementById('os-cliente-id').value = os.clienteId;
-    document.getElementById('os-veiculo').value = os.veiculo || '';
-    document.getElementById('os-data-abertura').value = os.dataAbertura;
-    document.getElementById('os-status').value = os.status;
-    document.getElementById('os-descricao').value = os.descricao || '';
-    document.getElementById('os-valor-total').value = os.valorTotal || '';
-    document.getElementById('os-numero-parcelas').value = os.qtdParcelas || 1;
-    document.getElementById('os-data-primeira-parcela').value = os.dataPrimeiraParcela || todayISO();
-
-    carregarParcelasOSNoModal(os.id);
-  } else {
-    titulo.textContent = 'Nova Ordem de Serviço';
-    numeroBadge.textContent = '';
-    form.reset();
-    document.getElementById('os-id').value = '';
-    document.getElementById('os-data-abertura').value = todayISO();
-    document.getElementById('os-status').value = 'aberto';
-    document.getElementById('os-numero-parcelas').value = 1;
-    document.getElementById('os-data-primeira-parcela').value = todayISO();
-
-    const container = document.getElementById('os-parcelas-tbody');
-    container.innerHTML = `
-      <div class="os-parcela-empty">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-          <line x1="1" y1="10" x2="23" y2="10"></line>
-        </svg>
-        <p>Nenhuma parcela gerada</p>
-        <span>Preencha o valor e clique em "Gerar"</span>
-      </div>
-    `;
-    document.getElementById('os-parcelas-total').textContent = 'Total: R$ 0,00';
-  }
-
-  modal.classList.add('is-open');
-}
-
-// Fecha modal OS
-function fecharModalOS() {
-  const modal = document.getElementById('modal-os');
-  modal.classList.remove('is-open');
-}
-
-// Salva OS
-function salvarOS(e) {
-  e.preventDefault();
-
-  const id = document.getElementById('os-id').value || crypto.randomUUID();
-  const clienteId = document.getElementById('os-cliente-id').value;
-  const cliente = clientes.find(c => c.id === clienteId);
-  const veiculo = document.getElementById('os-veiculo').value.trim();
-  const dataAbertura = document.getElementById('os-data-abertura').value || todayISO();
-  const status = document.getElementById('os-status').value;
-  const descricao = document.getElementById('os-descricao').value.trim();
-  const valorTotal = Number(document.getElementById('os-valor-total').value || 0);
-  const qtdParcelas = Number(document.getElementById('os-numero-parcelas').value || 1);
-  const dataPrimeiraParcela = document.getElementById('os-data-primeira-parcela').value || todayISO();
-
-  if (!clienteId) {
-    showToast('Selecione um cliente para a OS.', 'error');
-    return;
-  }
-
-  let numeroOS;
-  const existente = ordensServico.find(o => o.id === id);
-  if (existente) {
-    numeroOS = existente.numero;
-  } else {
-    numeroOS = (ordensServico[ordensServico.length - 1]?.numero || 0) + 1;
-  }
-
-  const os = {
-    id,
-    numero: numeroOS,
-    clienteId,
-    veiculo,
-    dataAbertura,
-    status,
-    descricao,
-    valorTotal,
-    qtdParcelas,
-    dataPrimeiraParcela
-  };
-
-  // Se for edição, limpar parcelas e entradas anteriores
-  if (existente) {
-    const idx = ordensServico.findIndex(o => o.id === id);
-    ordensServico[idx] = os;
-    parcelas = parcelas.filter(p => p.osId !== id);
-    movimentosCaixa = movimentosCaixa.filter(m => !(m.osId === id && m.tipo === 'entrada'));
-  } else {
-    ordensServico.push(os);
-  }
-
-  // Ler parcelas do modal
-  const container = document.getElementById('os-parcelas-tbody');
-  const items = Array.from(container.querySelectorAll('.os-parcela-item'));
-
-  items.forEach((item, index) => {
-    const numeroParcela = index + 1;
-    const dataVenc = item.querySelector('.os-parcela-date').value || todayISO();
-    const valorParc = Number(item.querySelector('.os-parcela-value').value || 0);
-    const pago = item.querySelector('.os-parcela-pago').checked;
-    const dataPag = item.querySelector('.os-parcela-pay-date').value || null;
-    const forma = item.querySelector('.os-parcela-forma').value || null;
-
-    const parc = {
-      id: crypto.randomUUID(),
-      osId: id,
-      clienteId,
-      numeroParcela,
-      valorParcela: valorParc,
-      dataVencimento: dataVenc,
-      dataPagamento: pago && dataPag ? dataPag : null,
-      formaPagamento: pago && forma ? forma : null
+// js/os.js
+if (window.OS) {
+    console.warn('⚠️ OS já foi carregado, pulando redeclaração');
+} else {
+    window.OS = {
+        // ... resto do código
     };
-    parcelas.push(parc);
-
-    // Se paga, lança entrada no caixa
-    if (parc.dataPagamento && parc.formaPagamento) {
-      movimentosCaixa.push({
-        id: crypto.randomUUID(),
-        tipo: 'entrada',
-        osId: id,
-        clienteId,
-        descricao: `Parc. ${numeroParcela} OS #${numeroOS} - ${cliente?.nome || ''}`,
-        data: parc.dataPagamento,
-        valor: valorParc,
-        formaPagamento: parc.formaPagamento,
-        observacoes: ''
-      });
-    }
-  });
-
-  persistAll();
-  fecharModalOS();
-  renderOSTabela();
-  atualizarContadoresOS();
-  
-  if (typeof renderClientesTabela === 'function') renderClientesTabela();
-  if (typeof renderCaixa === 'function') renderCaixa();
-  if (typeof atualizarDashboard === 'function') atualizarDashboard();
-
-  showToast('Ordem de serviço salva com sucesso!', 'success');
+    console.log('✅ Módulo OS carregado');
 }
 
-// Renderiza tabela de OS
-function renderOSTabela() {
-  const tbody = document.getElementById('os-tbody');
-  const inputBusca = document.getElementById('os-busca');
-  const filtroStatus = document.getElementById('os-filtro-status');
-  
-  if (!tbody) return;
 
-  const termo = (inputBusca?.value || '').toLowerCase().trim();
-  const statusFiltro = filtroStatus?.value || '';
+const OS = {
+    initialized: false,
+    osAtualId: null,
 
-  tbody.innerHTML = '';
+    init() {
+        if (this.initialized) return;
 
-  let lista = ordensServico.filter(os => {
-    // Filtro de busca
-    if (termo) {
-      const cliente = clientes.find(c => c.id === os.clienteId);
-      const texto = `${os.numero} ${cliente?.nome || ''} ${os.veiculo || ''}`.toLowerCase();
-      if (!texto.includes(termo)) return false;
-    }
-    
-    // Filtro de status
-    if (statusFiltro && os.status !== statusFiltro) return false;
-    
-    return true;
-  });
+        // === ELEMENTOS DO DOM ===
+        const btnNova = document.getElementById('btn-nova-os');
+        const btnCancelar = document.getElementById('btn-cancelar-os');
+        const form = document.getElementById('form-os');
+        const modal = document.getElementById('modal-os');
+        const backdrop = modal?.querySelector('.modal__backdrop');
 
-  if (!lista.length) {
-    tbody.innerHTML = `
-      <tr class="os-empty-row">
-        <td colspan="8">
-          <div class="os-empty-state">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="12" y1="18" x2="12" y2="12"></line>
-              <line x1="9" y1="15" x2="15" y2="15"></line>
-            </svg>
-            <p>Nenhuma ordem de serviço encontrada</p>
-            <span>Clique em "Nova OS" para criar a primeira</span>
-          </div>
+        // === EVENT LISTENERS - MODAL CRIAR/EDITAR ===
+        if (btnNova) {
+            btnNova.addEventListener('click', () => this.openModal());
+        }
+
+        if (btnCancelar) {
+            btnCancelar.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.closeModal();
+            });
+        }
+
+        if (backdrop) {
+            backdrop.addEventListener('click', () => this.closeModal());
+        }
+
+        if (form) {
+            form.addEventListener('submit', (e) => this.handleSubmit(e));
+        }
+
+        // === AUTO-CALCULAR VALOR TOTAL ===
+        const valorMaoObra = document.getElementById('os-valor-mao-obra');
+        const valorPecas = document.getElementById('os-valor-pecas');
+        const valorTotal = document.getElementById('os-valor-total');
+
+        if (valorMaoObra && valorPecas && valorTotal) {
+            const calcularTotal = () => {
+                const maoObra = parseFloat(valorMaoObra.value) || 0;
+                const pecas = parseFloat(valorPecas.value) || 0;
+                valorTotal.value = (maoObra + pecas).toFixed(2);
+            };
+
+            valorMaoObra.addEventListener('input', calcularTotal);
+            valorPecas.addEventListener('input', calcularTotal);
+        }
+
+        // === AUTO-PREENCHER DADOS DO CLIENTE ===
+        const selectCliente = document.getElementById('os-cliente');
+        if (selectCliente) {
+            selectCliente.addEventListener('change', () => {
+                const clienteId = selectCliente.value;
+                if (clienteId) {
+                    const cliente = window.storage.getClienteById(clienteId);
+                    if (cliente) {
+                        if (cliente.veiculoModelo) {
+                            document.getElementById('os-veiculo-modelo').value = cliente.veiculoModelo;
+                        }
+                        if (cliente.veiculoPlaca) {
+                            document.getElementById('os-veiculo-placa').value = cliente.veiculoPlaca;
+                        }
+                        if (cliente.veiculoAno) {
+                            document.getElementById('os-veiculo-ano').value = cliente.veiculoAno;
+                        }
+                    }
+                }
+            });
+        }
+
+        // === DEFINIR DATA DE HOJE POR PADRÃO ===
+        const dataAberturaInput = document.getElementById('os-data-abertura');
+        if (dataAberturaInput) {
+            dataAberturaInput.value = Utils.getCurrentDate();
+        }
+
+        // === FECHAR MODAIS COM TECLA ESC ===
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modalOS = document.getElementById('modal-os');
+                const modalDetalhes = document.getElementById('modal-detalhes-os');
+
+                if (modalOS?.classList.contains('is-open')) {
+                    this.closeModal();
+                }
+
+                if (modalDetalhes?.classList.contains('is-open')) {
+                    this.closeDetalhes();
+                }
+            }
+        });
+
+        // === PARCELAMENTO ===
+        const formaPagamento = document.getElementById('os-forma-pagamento');
+        const parcelamentoContainer = document.getElementById('parcelamento-container');
+        const btnGerarParcelas = document.getElementById('btn-gerar-parcelas');
+
+        if (formaPagamento && parcelamentoContainer) {
+            formaPagamento.addEventListener('change', () => {
+                if (formaPagamento.value === 'parcelado') {
+                    parcelamentoContainer.style.display = 'block';
+                } else {
+                    parcelamentoContainer.style.display = 'none';
+                    document.getElementById('parcelas-table-container').style.display = 'none';
+                }
+            });
+        }
+
+        if (btnGerarParcelas) {
+            btnGerarParcelas.addEventListener('click', () => {
+                this.gerarParcelas();
+            });
+        }
+
+
+        this.initialized = true;
+        console.log('✅ Módulo OS inicializado');
+    },
+
+
+    render() {
+        this.init();
+        this.loadClientesSelect();
+        this.renderTabela();
+    },
+
+    loadClientesSelect() {
+        const select = document.getElementById('os-cliente');
+        if (!select) return;
+
+        const clientes = window.storage.getClientes();
+
+        // Limpar opções (manter apenas a primeira)
+        select.innerHTML = '<option value="">Selecione um cliente</option>';
+
+        // Adicionar clientes
+        clientes.forEach(cliente => {
+            const option = document.createElement('option');
+            option.value = cliente.id;
+            option.textContent = `${cliente.nome} ${cliente.veiculoModelo ? '- ' + cliente.veiculoModelo : ''}`;
+            select.appendChild(option);
+        });
+    },
+
+    renderTabela() {
+        const tbody = document.getElementById('os-tbody');
+        if (!tbody) return;
+
+        const ordensServico = window.storage.getOS();
+        const clientes = window.storage.getClientes();
+
+        tbody.innerHTML = '';
+
+        if (ordensServico.length === 0) {
+            tbody.innerHTML = `
+        <tr class="empty-row">
+          <td colspan="7" style="text-align: center; padding: 2rem; color: #64748b; font-style: italic;">
+            Nenhuma ordem de serviço cadastrada
+          </td>
+        </tr>
+      `;
+            return;
+        }
+
+        // Ordenar por número (mais recente primeiro)
+        ordensServico.sort((a, b) => (b.numero || 0) - (a.numero || 0));
+
+        ordensServico.forEach(os => {
+            const cliente = clientes.find(c => c.id === os.clienteId);
+
+            // Status
+            let statusClass = 'status-pending';
+            let statusText = 'Pendente';
+
+            if (os.status === 'concluido') {
+                statusClass = 'status-done';
+                statusText = 'Concluído';
+            } else if (os.status === 'em_andamento') {
+                statusClass = 'status-progress';
+                statusText = 'Em Andamento';
+            } else if (os.status === 'pronto') {
+                statusClass = 'status-done';
+                statusText = 'Pronto';
+            } else if (os.status === 'aguardando_pecas') {
+                statusClass = 'status-pending';
+                statusText = 'Aguardando Peças';
+            } else if (os.status === 'cancelado') {
+                statusClass = 'status-badge-atraso';
+                statusText = 'Cancelado';
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+        <td><strong>#${os.numero || '-'}</strong></td>
+        <td>${cliente?.nome || '-'}</td>
+        <td>${os.veiculoModelo || '-'} <br><small style="color: #64748b;">${os.veiculoPlaca || ''}</small></td>
+        <td>${Utils.formatDate(os.dataAbertura)}</td>
+        <td><strong>${Utils.formatCurrency(os.valorTotal)}</strong></td>
+        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+        <td>
+          <button class="btn btn-detalhes btn-sm" data-id="${os.id}">
+            <i class="fas fa-eye"></i>
+          </button>
+          <button class="btn btn-editar btn-sm" data-id="${os.id}">
+            <i class="fas fa-edit"></i>
+          </button>
         </td>
-      </tr>
-    `;
-    return;
-  }
+      `;
+            tbody.appendChild(tr);
+        });
 
-  // Ordenar por número (mais recente primeiro)
-  lista.sort((a, b) => b.numero - a.numero);
+        // Event listeners dos botões
+        tbody.querySelectorAll('.btn-detalhes').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                this.openDetalhes(id);
+            });
+        });
 
-  lista.forEach(os => {
-    const cliente = clientes.find(c => c.id === os.clienteId);
-    const pagamento = calcularStatusPagamento(os.id);
-    
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="os-numero-cell">#${os.numero}</td>
-      <td>${formatDate(os.dataAbertura)}</td>
-      <td>${cliente?.nome || '-'}</td>
-      <td>${os.veiculo || '-'}</td>
-      <td><strong>${formatCurrency(os.valorTotal)}</strong></td>
-      <td>
-        <span class="os-payment-badge os-payment-badge--${pagamento.status}">
-          ${pagamento.status === 'paid' ? '✓' : ''} ${pagamento.label}
-        </span>
-      </td>
-      <td>
-        <span class="os-status-badge os-status-badge--${os.status}">
-          ${getStatusLabel(os.status)}
-        </span>
-      </td>
-      <td>
-        <div class="os-actions">
-          <button class="os-action-btn os-action-btn--view" data-view-os="${os.id}" title="Ver detalhes">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </button>
-          <button class="os-action-btn os-action-btn--edit" data-edit-os="${os.id}" title="Editar">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-          </button>
-        </div>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+        tbody.querySelectorAll('.btn-editar').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                const os = window.storage.getOSById(id);
+                if (os) this.openModal(os);
+            });
+        });
+    },
 
-  // Event listeners para botões
-  tbody.querySelectorAll('[data-edit-os]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.editOs;
-      const os = ordensServico.find(o => o.id === id);
-      if (os) abrirModalOS(os);
-    });
-  });
+    openModal(os = null) {
+        const modal = document.getElementById('modal-os');
+        const titulo = document.getElementById('modal-os-titulo');
+        const form = document.getElementById('form-os');
 
-  tbody.querySelectorAll('[data-view-os]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.viewOs;
-      const os = ordensServico.find(o => o.id === id);
-      if (os) abrirModalDetalhesOS(os);
-    });
-  });
-}
+        if (!modal || !form) return;
 
-// Modal de detalhes da OS
-function abrirModalDetalhesOS(os) {
-  const modal = document.getElementById('modal-os-detalhes');
-  const numeroBadge = document.getElementById('os-det-numero');
-  const content = document.getElementById('os-details-content');
-  
-  if (!modal || !content) return;
+        // Carregar clientes no select
+        this.loadClientesSelect();
 
-  const cliente = clientes.find(c => c.id === os.clienteId);
-  const parcelasOS = parcelas.filter(p => p.osId === os.id).sort((a, b) => a.numeroParcela - b.numeroParcela);
-  const pagamento = calcularStatusPagamento(os.id);
+        if (os) {
+            // Edição
+            titulo.innerHTML = '<i class="fas fa-file-invoice"></i> Editar Ordem de Serviço';
+            document.getElementById('os-id').value = os.id;
+            document.getElementById('os-cliente').value = os.clienteId || '';
+            document.getElementById('os-veiculo-modelo').value = os.veiculoModelo || '';
+            document.getElementById('os-veiculo-placa').value = os.veiculoPlaca || '';
+            document.getElementById('os-veiculo-ano').value = os.veiculoAno || '';
+            document.getElementById('os-km').value = os.km || '';
+            document.getElementById('os-problema').value = os.problema || '';
+            document.getElementById('os-diagnostico').value = os.diagnostico || '';
+            document.getElementById('os-servicos').value = os.servicos || '';
+            document.getElementById('os-pecas').value = os.pecas || '';
+            document.getElementById('os-valor-mao-obra').value = os.valorMaoObra || '';
+            document.getElementById('os-valor-pecas').value = os.valorPecas || '';
+            document.getElementById('os-valor-total').value = os.valorTotal || '';
+            document.getElementById('os-data-abertura').value = os.dataAbertura || '';
+            document.getElementById('os-data-previsao').value = os.dataPrevisao || '';
+            document.getElementById('os-forma-pagamento').value = os.formaPagamento || '';
+            document.getElementById('os-status').value = os.status || 'pendente';
+            document.getElementById('os-garantia').value = os.garantia || '';
+            document.getElementById('os-observacoes').value = os.observacoes || '';
 
-  numeroBadge.textContent = `OS #${os.numero}`;
+            // === CARREGAR PARCELAMENTO SE EXISTIR ===
+            const parcelamentoContainer = document.getElementById('parcelamento-container');
+            const parcelasTableContainer = document.getElementById('parcelas-table-container');
 
-  let parcelasHTML = '';
-  if (parcelasOS.length > 0) {
-    parcelasHTML = parcelasOS.map(p => `
-      <div class="os-parcela-item ${p.dataPagamento ? 'os-parcela-item--paid' : ''}">
-        <span class="os-parcela-num">${p.numeroParcela}</span>
-        <span>${formatDate(p.dataVencimento)}</span>
-        <span><strong>${formatCurrency(p.valorParcela)}</strong></span>
-        <span>${p.dataPagamento ? '✓ Pago' : 'Pendente'}</span>
-        <span>${p.dataPagamento ? formatDate(p.dataPagamento) : '-'}</span>
-        <span>${p.formaPagamento || '-'}</span>
-      </div>
-    `).join('');
-  } else {
-    parcelasHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">Nenhuma parcela registrada</p>';
-  }
+            if (os.formaPagamento === 'parcelado' && os.parcelas && os.parcelas.length > 0) {
+                // Mostrar container de parcelamento
+                if (parcelamentoContainer) {
+                    parcelamentoContainer.style.display = 'block';
+                }
 
-  content.innerHTML = `
-    <div class="os-details-grid">
-      <div class="os-detail-item">
-        <span class="os-detail-label">Cliente</span>
-        <span class="os-detail-value">${cliente?.nome || '-'}</span>
-      </div>
-      <div class="os-detail-item">
-        <span class="os-detail-label">Veículo</span>
-        <span class="os-detail-value">${os.veiculo || '-'}</span>
-      </div>
-      <div class="os-detail-item">
-        <span class="os-detail-label">Data de Abertura</span>
-        <span class="os-detail-value">${formatDate(os.dataAbertura)}</span>
-      </div>
-      <div class="os-detail-item">
-        <span class="os-detail-label">Status</span>
-        <span class="os-detail-value">
-          <span class="os-status-badge os-status-badge--${os.status}">${getStatusLabel(os.status)}</span>
-        </span>
-      </div>
-      <div class="os-detail-item">
-        <span class="os-detail-label">Valor Total</span>
-        <span class="os-detail-value" style="font-size: 1.2rem; color: #059669;">${formatCurrency(os.valorTotal)}</span>
-      </div>
-      <div class="os-detail-item">
-        <span class="os-detail-label">Pagamento</span>
-        <span class="os-detail-value">
-          <span class="os-payment-badge os-payment-badge--${pagamento.status}">${pagamento.label}</span>
-        </span>
-      </div>
-    </div>
-    
-    ${os.descricao ? `
-      <div class="os-details-section">
-        <h4>Descrição do Serviço</h4>
-        <p style="color: #374151; line-height: 1.6;">${os.descricao}</p>
-      </div>
-    ` : ''}
-    
-    <div class="os-details-section">
-      <h4>Parcelas (${parcelasOS.length})</h4>
-      <div class="os-parcelas-container" style="margin-top: 0;">
-        <div class="os-parcelas-header">
-          <span>#</span>
-          <span>Vencimento</span>
-          <span>Valor</span>
-          <span>Status</span>
-          <span>Data Pgto</span>
-          <span>Forma</span>
-        </div>
-        <div class="os-parcelas-list">
-          ${parcelasHTML}
-        </div>
-      </div>
-    </div>
-  `;
+                // Preencher número de parcelas
+                const numParcelasSelect = document.getElementById('os-num-parcelas');
+                if (numParcelasSelect) {
+                    numParcelasSelect.value = os.parcelas.length;
+                }
 
-  // Guardar ID da OS atual para o botão editar
-  modal.dataset.currentOsId = os.id;
-  modal.classList.add('is-open');
-}
+                // Preencher data da primeira parcela
+                const dataPrimeiraInput = document.getElementById('os-data-primeira-parcela');
+                if (dataPrimeiraInput && os.parcelas[0]) {
+                    dataPrimeiraInput.value = os.parcelas[0].data;
+                }
 
-function fecharModalDetalhesOS() {
-  const modal = document.getElementById('modal-os-detalhes');
-  if (modal) modal.classList.remove('is-open');
-}
+                // Renderizar parcelas na tabela
+                const tbody = document.getElementById('parcelas-tbody');
+                if (tbody) {
+                    tbody.innerHTML = '';
 
-// Inicialização
-function initOS() {
-  const btnNovaOS = document.getElementById('btn-nova-os');
-  const btnCancelarOS = document.getElementById('btn-cancelar-os');
-  const btnCloseOS = document.getElementById('btn-close-os');
-  const btnGerarParcelas = document.getElementById('btn-gerar-parcelas');
-  const modal = document.getElementById('modal-os');
-  const backdrop = modal?.querySelector('.modal__backdrop');
-  const form = document.getElementById('form-os');
-  const inputBusca = document.getElementById('os-busca');
-  const filtroStatus = document.getElementById('os-filtro-status');
+                    os.parcelas.forEach((parcela, index) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+              <td><strong>${parcela.numero || (index + 1)}/${os.parcelas.length}</strong></td>
+              <td>
+                <input type="date" class="parcela-data" data-index="${index + 1}" value="${parcela.data || ''}">
+              </td>
+              <td>
+                <input type="text" class="input-control parcela-desc" data-index="${index + 1}" 
+                       value="${parcela.descricao || 'Parcela ' + (index + 1)}" style="max-width: 200px;">
+              </td>
+              <td>
+                <select class="parcela-forma" data-index="${index + 1}">
+                  <option value="dinheiro" ${parcela.forma === 'dinheiro' ? 'selected' : ''}>Dinheiro</option>
+                  <option value="pix" ${parcela.forma === 'pix' ? 'selected' : ''}>PIX</option>
+                  <option value="debito" ${parcela.forma === 'debito' ? 'selected' : ''}>Débito</option>
+                  <option value="credito" ${parcela.forma === 'credito' ? 'selected' : ''}>Crédito</option>
+                  <option value="boleto" ${parcela.forma === 'boleto' ? 'selected' : ''}>Boleto</option>
+                </select>
+              </td>
+              <td>
+                <select class="parcela-status" data-index="${index + 1}">
+                  <option value="entrada" ${parcela.status === 'entrada' ? 'selected' : ''}>Entrada</option>
+                  <option value="pendente" ${parcela.status === 'pendente' ? 'selected' : ''}>Pendente</option>
+                  <option value="pago" ${parcela.status === 'pago' ? 'selected' : ''}>Pago</option>
+                </select>
+              </td>
+              <td><strong>R$ ${parcela.valor.toFixed(2)}</strong></td>
+            `;
+                        tbody.appendChild(tr);
+                    });
 
-  // Modal de detalhes
-  const modalDet = document.getElementById('modal-os-detalhes');
-  const backdropDet = modalDet?.querySelector('.modal__backdrop');
-  const btnCloseDet = document.getElementById('btn-close-os-det');
-  const btnFecharDet = document.getElementById('btn-fechar-os-det');
-  const btnEditarDet = document.getElementById('btn-editar-os-det');
+                    // Atualizar total
+                    const totalElement = document.getElementById('parcelas-total');
+                    if (totalElement) {
+                        totalElement.textContent = Utils.formatCurrency(os.valorTotal || 0);
+                    }
 
-  // Event listeners - Modal principal
-  if (btnNovaOS) btnNovaOS.addEventListener('click', () => abrirModalOS(null));
-  if (btnCancelarOS) btnCancelarOS.addEventListener('click', fecharModalOS);
-  if (btnCloseOS) btnCloseOS.addEventListener('click', fecharModalOS);
-  if (backdrop) backdrop.addEventListener('click', fecharModalOS);
-  if (btnGerarParcelas) btnGerarParcelas.addEventListener('click', gerarParcelasParaModal);
-  if (form) form.addEventListener('submit', salvarOS);
-  if (inputBusca) inputBusca.addEventListener('input', renderOSTabela);
-  if (filtroStatus) filtroStatus.addEventListener('change', renderOSTabela);
+                    // Mostrar tabela
+                    if (parcelasTableContainer) {
+                        parcelasTableContainer.style.display = 'block';
+                    }
+                }
+            } else {
+                // Ocultar parcelamento se não for parcelado
+                if (parcelamentoContainer) {
+                    parcelamentoContainer.style.display = 'none';
+                }
+                if (parcelasTableContainer) {
+                    parcelasTableContainer.style.display = 'none';
+                }
+            }
+        } else {
+            // Nova OS
+            titulo.innerHTML = '<i class="fas fa-file-invoice"></i> Nova Ordem de Serviço';
+            form.reset();
+            document.getElementById('os-id').value = '';
+            document.getElementById('os-data-abertura').value = Utils.getCurrentDate();
+            document.getElementById('os-status').value = 'pendente';
 
-  // Event listeners - Modal detalhes
-  if (backdropDet) backdropDet.addEventListener('click', fecharModalDetalhesOS);
-  if (btnCloseDet) btnCloseDet.addEventListener('click', fecharModalDetalhesOS);
-  if (btnFecharDet) btnFecharDet.addEventListener('click', fecharModalDetalhesOS);
-  if (btnEditarDet) {
-    btnEditarDet.addEventListener('click', () => {
-      const osId = modalDet.dataset.currentOsId;
-      const os = ordensServico.find(o => o.id === osId);
-      if (os) {
-        fecharModalDetalhesOS();
-        abrirModalOS(os);
-      }
-    });
-  }
+            // Ocultar parcelamento
+            const parcelamentoContainer = document.getElementById('parcelamento-container');
+            const parcelasTableContainer = document.getElementById('parcelas-table-container');
+            if (parcelamentoContainer) {
+                parcelamentoContainer.style.display = 'none';
+            }
+            if (parcelasTableContainer) {
+                parcelasTableContainer.style.display = 'none';
+            }
+        }
 
-  // Render inicial
-  renderOSTabela();
-  atualizarContadoresOS();
-}
+        modal.classList.add('is-open');
+    },
+
+
+    closeModal() {
+        const modal = document.getElementById('modal-os');
+        if (modal) modal.classList.remove('is-open');
+    },
+
+    openDetalhes(osId) {
+        this.osAtualId = osId;
+        const os = window.storage.getOSById(osId);
+
+        if (!os) {
+            Utils.showToast('OS não encontrada', 'error');
+            return;
+        }
+
+        const cliente = window.storage.getClienteById(os.clienteId);
+
+        // Preencher informações básicas
+        document.getElementById('detalhes-os-numero').textContent = `#${os.numero || '-'}`;
+
+        // Status
+        let statusClass = 'status-pending';
+        let statusText = 'Pendente';
+
+        if (os.status === 'concluido') {
+            statusClass = 'status-done';
+            statusText = 'Concluído';
+        } else if (os.status === 'em_andamento') {
+            statusClass = 'status-progress';
+            statusText = 'Em Andamento';
+        } else if (os.status === 'pronto') {
+            statusClass = 'status-done';
+            statusText = 'Pronto';
+        } else if (os.status === 'aguardando_pecas') {
+            statusClass = 'status-pending';
+            statusText = 'Aguardando Peças';
+        } else if (os.status === 'cancelado') {
+            statusClass = 'status-pending';
+            statusText = 'Cancelado';
+        }
+
+        const statusBadge = document.getElementById('detalhes-os-status-badge');
+        if (statusBadge) {
+            statusBadge.innerHTML = `<span class="status-badge ${statusClass}">${statusText}</span>`;
+        }
+
+        // Cliente
+        document.getElementById('detalhes-cliente-nome').textContent = cliente?.nome || '-';
+        document.getElementById('detalhes-cliente-telefone').textContent = cliente?.telefone || '-';
+
+        // Veículo
+        document.getElementById('detalhes-veiculo-modelo').textContent = os.veiculoModelo || '-';
+        document.getElementById('detalhes-veiculo-placa').textContent = os.veiculoPlaca || '-';
+        document.getElementById('detalhes-veiculo-ano').textContent = os.veiculoAno || '-';
+        document.getElementById('detalhes-km').textContent = os.km ? `${os.km} km` : '-';
+
+        // Serviço
+        document.getElementById('detalhes-problema').textContent = os.problema || 'Não informado';
+        document.getElementById('detalhes-diagnostico').textContent = os.diagnostico || 'Não informado';
+        document.getElementById('detalhes-servicos').textContent = os.servicos || 'Não informado';
+        document.getElementById('detalhes-pecas').textContent = os.pecas || 'Nenhuma peça informada';
+
+        // Valores
+        document.getElementById('detalhes-valor-mao-obra').textContent = Utils.formatCurrency(os.valorMaoObra || 0);
+        document.getElementById('detalhes-valor-pecas').textContent = Utils.formatCurrency(os.valorPecas || 0);
+        document.getElementById('detalhes-valor-total').textContent = Utils.formatCurrency(os.valorTotal || 0);
+        document.getElementById('detalhes-valor-pago').textContent = Utils.formatCurrency(os.valorPago || 0);
+
+        const valorRestante = (os.valorTotal || 0) - (os.valorPago || 0);
+        document.getElementById('detalhes-valor-restante').textContent = Utils.formatCurrency(valorRestante);
+
+        // Datas
+        document.getElementById('detalhes-data-abertura').textContent = Utils.formatDate(os.dataAbertura);
+        document.getElementById('detalhes-data-previsao').textContent = Utils.formatDate(os.dataPrevisao) || 'Não definida';
+        document.getElementById('detalhes-forma-pagamento').textContent = this.getFormaPagamentoTexto(os.formaPagamento);
+        document.getElementById('detalhes-garantia').textContent = os.garantia ? `${os.garantia} dias` : 'Sem garantia';
+
+        // Observações
+        const observacoesSection = document.getElementById('detalhes-observacoes-section');
+        const observacoesEl = document.getElementById('detalhes-observacoes');
+        if (os.observacoes) {
+            observacoesEl.textContent = os.observacoes;
+            observacoesSection.style.display = 'block';
+        } else {
+            observacoesSection.style.display = 'none';
+        }
+
+        // Abrir modal PRIMEIRO
+        const modal = document.getElementById('modal-detalhes-os');
+        if (modal) {
+            modal.classList.add('is-open');
+        }
+
+        // === ANEXAR EVENT LISTENERS APÓS MODAL ESTAR ABERTO ===
+        setTimeout(() => {
+            // Botão Fechar (X)
+            const btnFechar = document.getElementById('btn-fechar-detalhes-os');
+            if (btnFechar) {
+                btnFechar.onclick = () => {
+                    console.log('🔴 Botão X clicado');
+                    this.closeDetalhes();
+                };
+            }
+
+            // Backdrop (clicar fora)
+            const modalDetalhes = document.getElementById('modal-detalhes-os');
+            const backdrop = modalDetalhes?.querySelector('.modal__backdrop');
+            if (backdrop) {
+                backdrop.onclick = () => {
+                    console.log('🔴 Backdrop clicado');
+                    this.closeDetalhes();
+                };
+            }
+
+            // Botão Ver Cliente
+            const btnVerCliente = document.getElementById('btn-ver-cliente-da-os');
+            if (btnVerCliente) {
+                btnVerCliente.onclick = () => {
+                    console.log('🟢 Ver Cliente clicado');
+                    if (os.clienteId) {
+                        this.closeDetalhes();
+                        if (window.router) {
+                            window.router.navigateTo('clientes');
+                        }
+                        setTimeout(() => {
+                            if (window.Clientes && window.Clientes.openDetalhes) {
+                                window.Clientes.openDetalhes(os.clienteId);
+                            }
+                        }, 300);
+                    }
+                };
+            }
+
+            // Botão Editar
+            const btnEditar = document.getElementById('btn-editar-os-detalhes');
+            if (btnEditar) {
+                btnEditar.onclick = () => {
+                    console.log('🟢 Editar OS clicado');
+
+                    // Fechar modal de detalhes
+                    const modalDetalhes = document.getElementById('modal-detalhes-os');
+                    if (modalDetalhes) {
+                        modalDetalhes.classList.remove('is-open');
+                    }
+
+                    // Abrir modal de edição
+                    setTimeout(() => {
+                        const modal = document.getElementById('modal-os');
+                        const titulo = document.getElementById('modal-os-titulo');
+                        const form = document.getElementById('form-os');
+
+                        if (!modal || !form) return;
+
+                        // Carregar clientes no select
+                        this.loadClientesSelect();
+
+                        // Preencher formulário com dados da OS
+                        titulo.innerHTML = '<i class="fas fa-file-invoice"></i> Editar Ordem de Serviço';
+                        document.getElementById('os-id').value = os.id;
+                        document.getElementById('os-cliente').value = os.clienteId || '';
+                        document.getElementById('os-veiculo-modelo').value = os.veiculoModelo || '';
+                        document.getElementById('os-veiculo-placa').value = os.veiculoPlaca || '';
+                        document.getElementById('os-veiculo-ano').value = os.veiculoAno || '';
+                        document.getElementById('os-km').value = os.km || '';
+                        document.getElementById('os-problema').value = os.problema || '';
+                        document.getElementById('os-diagnostico').value = os.diagnostico || '';
+                        document.getElementById('os-servicos').value = os.servicos || '';
+                        document.getElementById('os-pecas').value = os.pecas || '';
+                        document.getElementById('os-valor-mao-obra').value = os.valorMaoObra || '';
+                        document.getElementById('os-valor-pecas').value = os.valorPecas || '';
+                        document.getElementById('os-valor-total').value = os.valorTotal || '';
+                        document.getElementById('os-data-abertura').value = os.dataAbertura || '';
+                        document.getElementById('os-data-previsao').value = os.dataPrevisao || '';
+                        document.getElementById('os-forma-pagamento').value = os.formaPagamento || '';
+                        document.getElementById('os-valor-pago').value = os.valorPago || '';
+                        document.getElementById('os-status').value = os.status || 'pendente';
+                        document.getElementById('os-garantia').value = os.garantia || '';
+                        document.getElementById('os-observacoes').value = os.observacoes || '';
+
+                        // Abrir modal
+                        modal.classList.add('is-open');
+                        console.log('✅ Modal de edição aberto');
+
+                        // === ANEXAR LISTENERS DIRETAMENTE ===
+                        setTimeout(() => {
+                            // Botão Cancelar
+                            const btnCancelar = document.getElementById('btn-cancelar-os');
+                            if (btnCancelar) {
+                                btnCancelar.onclick = (e) => {
+                                    e.preventDefault();
+                                    console.log('🔴 Cancelar (inline) clicado');
+                                    modal.classList.remove('is-open');
+                                };
+                            }
+
+                            // Backdrop
+                            const backdrop = modal.querySelector('.modal__backdrop');
+                            if (backdrop) {
+                                backdrop.onclick = () => {
+                                    console.log('🔴 Backdrop (inline) clicado');
+                                    modal.classList.remove('is-open');
+                                };
+                            }
+
+                            console.log('✅ Listeners inline anexados ao modal de edição');
+                        }, 100);
+                    }, 300);
+                };
+            }
+
+            // Botão Imprimir
+            const btnImprimir = document.getElementById('btn-imprimir-os');
+            if (btnImprimir) {
+                btnImprimir.onclick = () => {
+                    console.log('🟢 Imprimir clicado');
+                    Utils.showToast('Função de impressão em desenvolvimento...', 'info');
+                };
+            }
+
+            console.log('✅ Event listeners dos botões anexados');
+        }, 100);
+    },
+
+    closeDetalhes() {
+        const modal = document.getElementById('modal-detalhes-os');
+        if (modal) modal.classList.remove('is-open');
+        this.osAtualId = null;
+    },
+
+    getFormaPagamentoTexto(forma) {
+        const formas = {
+            'dinheiro': 'Dinheiro',
+            'pix': 'PIX',
+            'debito': 'Cartão de Débito',
+            'credito': 'Cartão de Crédito',
+            'boleto': 'Boleto',
+            'prazo': 'A Prazo'
+        };
+        return formas[forma] || 'Não informado';
+    },
+
+    gerarParcelas() {
+        const valorTotal = parseFloat(document.getElementById('os-valor-total').value) || 0;
+        const numParcelas = parseInt(document.getElementById('os-num-parcelas').value);
+        const dataPrimeira = document.getElementById('os-data-primeira-parcela').value;
+
+        if (valorTotal <= 0) {
+            Utils.showToast('Defina o valor total antes de gerar parcelas', 'error');
+            return;
+        }
+
+        if (!numParcelas) {
+            Utils.showToast('Selecione o número de parcelas', 'error');
+            return;
+        }
+
+        if (!dataPrimeira) {
+            Utils.showToast('Defina a data da primeira parcela', 'error');
+            return;
+        }
+
+        // Calcular valor de cada parcela
+        const valorParcela = (valorTotal / numParcelas).toFixed(2);
+        const tbody = document.getElementById('parcelas-tbody');
+        const container = document.getElementById('parcelas-table-container');
+
+        tbody.innerHTML = '';
+
+        // Gerar linhas das parcelas
+        for (let i = 1; i <= numParcelas; i++) {
+            // Calcular data da parcela (somar meses)
+            const dataParcela = new Date(dataPrimeira);
+            dataParcela.setMonth(dataParcela.getMonth() + (i - 1));
+            const dataFormatada = dataParcela.toISOString().split('T')[0];
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+        <td><strong>${i}/${numParcelas}</strong></td>
+        <td>
+          <input type="date" class="parcela-data" data-index="${i}" value="${dataFormatada}">
+        </td>
+        <td>
+          <input type="text" class="input-control parcela-desc" data-index="${i}" 
+                 value="Parcela ${i}/${numParcelas}" style="max-width: 200px;">
+        </td>
+        <td>
+          <select class="parcela-forma" data-index="${i}">
+            <option value="dinheiro">Dinheiro</option>
+            <option value="pix" selected>PIX</option>
+            <option value="debito">Débito</option>
+            <option value="credito">Crédito</option>
+            <option value="boleto">Boleto</option>
+          </select>
+        </td>
+        <td>
+          <select class="parcela-status" data-index="${i}">
+            <option value="entrada" ${i === 1 ? 'selected' : ''}>Entrada</option>
+            <option value="pendente" ${i > 1 ? 'selected' : ''}>Pendente</option>
+            <option value="pago">Pago</option>
+          </select>
+        </td>
+        <td><strong>R$ ${valorParcela}</strong></td>
+      `;
+            tbody.appendChild(tr);
+        }
+
+        // Atualizar total
+        document.getElementById('parcelas-total').textContent = Utils.formatCurrency(valorTotal);
+
+        // Mostrar tabela
+        container.style.display = 'block';
+
+        Utils.showToast(`${numParcelas} parcelas geradas com sucesso!`, 'success');
+    },
+
+
+    handleSubmit(e) {
+        e.preventDefault();
+
+        const id = document.getElementById('os-id').value;
+        const osData = {
+            clienteId: document.getElementById('os-cliente').value,
+            veiculoModelo: document.getElementById('os-veiculo-modelo').value.trim(),
+            veiculoPlaca: document.getElementById('os-veiculo-placa').value.trim(),
+            veiculoAno: document.getElementById('os-veiculo-ano').value.trim(),
+            km: document.getElementById('os-km').value,
+            problema: document.getElementById('os-problema').value.trim(),
+            diagnostico: document.getElementById('os-diagnostico').value.trim(),
+            servicos: document.getElementById('os-servicos').value.trim(),
+            pecas: document.getElementById('os-pecas').value.trim(),
+            valorMaoObra: parseFloat(document.getElementById('os-valor-mao-obra').value) || 0,
+            valorPecas: parseFloat(document.getElementById('os-valor-pecas').value) || 0,
+            valorTotal: parseFloat(document.getElementById('os-valor-total').value) || 0,
+            dataAbertura: document.getElementById('os-data-abertura').value,
+            dataPrevisao: document.getElementById('os-data-previsao').value,
+            formaPagamento: document.getElementById('os-forma-pagamento').value,
+            valorPago: 0, // Será calculado com base nas parcelas ou definido manualmente
+            status: document.getElementById('os-status').value,
+            garantia: document.getElementById('os-garantia').value,
+            observacoes: document.getElementById('os-observacoes').value.trim()
+        };
+
+        // === COLETAR DADOS DE PARCELAMENTO ===
+        let parcelas = null;
+        const formaPagamento = document.getElementById('os-forma-pagamento');
+
+        if (formaPagamento && formaPagamento.value === 'parcelado') {
+            const tbody = document.getElementById('parcelas-tbody');
+
+            if (tbody && tbody.children.length > 0) {
+                parcelas = [];
+                let valorPagoTotal = 0;
+
+                Array.from(tbody.children).forEach((tr, index) => {
+                    const dataInput = tr.querySelector('.parcela-data');
+                    const descInput = tr.querySelector('.parcela-desc');
+                    const formaSelect = tr.querySelector('.parcela-forma');
+                    const statusSelect = tr.querySelector('.parcela-status');
+
+                    const valorParcela = parseFloat((osData.valorTotal / tbody.children.length).toFixed(2));
+                    const statusParcela = statusSelect ? statusSelect.value : 'pendente';
+
+                    // Somar ao valor pago se status for "pago" ou "entrada"
+                    if (statusParcela === 'pago' || statusParcela === 'entrada') {
+                        valorPagoTotal += valorParcela;
+                    }
+
+                    parcelas.push({
+                        numero: index + 1,
+                        data: dataInput ? dataInput.value : '',
+                        descricao: descInput ? descInput.value : `Parcela ${index + 1}`,
+                        forma: formaSelect ? formaSelect.value : 'pix',
+                        status: statusParcela,
+                        valor: valorParcela
+                    });
+                });
+
+                osData.parcelas = parcelas;
+                osData.numParcelas = parcelas.length;
+                osData.valorPago = valorPagoTotal;
+            }
+        }
+
+        // === SALVAR ===
+        if (id) {
+            // Atualizar
+            window.storage.updateOS(id, osData);
+            Utils.showToast('OS atualizada com sucesso!', 'success');
+        } else {
+            // Criar
+            window.storage.addOS(osData);
+            Utils.showToast('OS criada com sucesso!', 'success');
+        }
+
+        this.closeModal();
+        this.render();
+
+        // Atualizar dashboard
+        if (window.Dashboard) window.Dashboard.render();
+    }
+
+};
+
+window.OS = OS;
+console.log('✅ Módulo OS carregado');

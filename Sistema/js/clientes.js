@@ -103,7 +103,7 @@ function renderClientesTabela() {
 function abrirModalCliente(cliente) {
   const modal = document.getElementById('modal-cliente');
   const titulo = document.getElementById('modal-cliente-titulo');
-  
+
   if (cliente) {
     titulo.textContent = 'Editar Cliente';
     document.getElementById('cliente-id').value = cliente.id;
@@ -127,7 +127,7 @@ function abrirModalCliente(cliente) {
     document.getElementById('form-cliente').reset();
     document.getElementById('cliente-id-sequencial').value = novoId;
   }
-  
+
   modal.classList.add('is-open');
 }
 
@@ -137,7 +137,7 @@ function fecharModalCliente() {
 
 function abrirCardDetalhesCliente(cliente) {
   const modal = document.getElementById('modal-cliente-detalhes');
-  
+
   // Preencher dados básicos
   document.getElementById('det-cliente-id-seq').textContent = cliente.idSequencial || '-';
   document.getElementById('det-cliente-nome').textContent = cliente.nome || '';
@@ -151,7 +151,7 @@ function abrirCardDetalhesCliente(cliente) {
   // Montar histórico de OS
   const tbodyOS = document.getElementById('det-cliente-os-tbody');
   tbodyOS.innerHTML = '';
-  
+
   const osCliente = ordensServico
     .filter(os => os.clienteId === cliente.id)
     .sort((a, b) => (a.dataAbertura > b.dataAbertura ? -1 : 1)); // mais recente primeiro
@@ -179,7 +179,7 @@ function abrirCardDetalhesCliente(cliente) {
   const parcelasCliente = parcelas.filter(p => p.clienteId === cliente.id);
   const hoje = new Date().toISOString().slice(0, 10);
   const atrasos = parcelasCliente.filter(p => !p.dataPagamento && p.dataVencimento < hoje);
-  
+
   const alertaAtraso = document.getElementById('det-cliente-alerta-atraso');
   if (atrasos.length > 0) {
     alertaAtraso.style.display = 'block';
@@ -200,33 +200,55 @@ function abrirCardDetalhesCliente(cliente) {
 function initDetalhesClienteModal() {
   const modal = document.getElementById('modal-cliente-detalhes');
   if (!modal) return;
-  
+
   const backdrop = modal.querySelector('.modal__backdrop');
   const btnFechar = document.getElementById('btn-fechar-detalhes-cliente');
-  
+
   function fechar() {
     modal.classList.remove('is-open');
   }
-  
+
   if (backdrop) backdrop.addEventListener('click', fechar);
   if (btnFechar) btnFechar.addEventListener('click', fechar);
 }
 
+let clientesInitialized = false;
+
 window.initClientes = function initClientes() {
-      // Verificar se estamos na página de clientes
-    const tbody = document.getElementById('clientes-tbody');
-    if (!tbody) return; // Não estamos na página de clientes
+  // Verificar se estamos na página de clientes
+  const tbody = document.getElementById('clientes-tbody');
+  if (!tbody) {
+    console.warn('Tabela de clientes não encontrada - view não está ativa');
+    return;
+  }
 
   const btnNovo = document.getElementById('btn-novo-cliente');
   const inputBusca = document.getElementById('clientes-busca');
   const form = document.getElementById('form-cliente');
   const btnCancelar = document.getElementById('btn-cancelar-cliente');
   const modal = document.getElementById('modal-cliente');
+  
+  // Verificar se todos os elementos necessários existem
+  if (!btnNovo || !inputBusca || !form || !btnCancelar || !modal) {
+    console.warn('Elementos da página de clientes não encontrados');
+    return;
+  }
+  
   const backdrop = modal.querySelector('.modal__backdrop');
+
+  // Se já foi inicializado, apenas renderizar a tabela
+  if (clientesInitialized) {
+    console.log('Clientes já inicializado, apenas renderizando tabela');
+    renderClientesTabela();
+    return;
+  }
+
+  // Marcar como inicializado
+  clientesInitialized = true;
 
   btnNovo.addEventListener('click', () => abrirModalCliente(null));
   btnCancelar.addEventListener('click', fecharModalCliente);
-  backdrop.addEventListener('click', fecharModalCliente);
+  if (backdrop) backdrop.addEventListener('click', fecharModalCliente);
   inputBusca.addEventListener('input', renderClientesTabela);
 
   form.addEventListener('submit', e => {
@@ -261,6 +283,8 @@ window.initClientes = function initClientes() {
 
   initDetalhesClienteModal();
   renderClientesTabela();
+  
+  console.log('Clientes inicializado com sucesso');
 };
 
 function excluirCliente(id) {
@@ -284,13 +308,6 @@ function excluirCliente(id) {
 }
 
 function formatCurrency(val) {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 }
 
-// Inicializar automaticamente quando o DOM estiver pronto
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initClientes);
-} else {
-    // DOMContentLoaded já foi disparado
-    initClientes();
-}

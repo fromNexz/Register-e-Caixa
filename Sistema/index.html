@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oficina Manager - Dashboard Profissional</title>
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <style>
         :root {
             --primary: #4361ee;
@@ -20,7 +21,7 @@
             --dark: #212529;
             --light: #f8f9fa;
             --bg: #f0f2f5;
-            --card-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             --sidebar-width: 260px;
         }
@@ -54,155 +55,533 @@
             left: 0;
             top: 0;
             padding: 2rem 1rem;
-            display: flex; flex-direction: column;
+            display: flex;
+            flex-direction: column;
             z-index: 1000;
             transition: var(--transition);
         }
 
         .brand {
-            display: flex; align-items: center; gap: 12px;
-            padding: 0 1rem 2.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 1rem 2.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
         }
 
-        .brand i { font-size: 1.8rem; color: var(--info); }
-        .brand-text h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px; }
-        .brand-text p { font-size: 0.75rem; opacity: 0.6; }
+        .brand i {
+            font-size: 1.8rem;
+            color: var(--info);
+        }
 
-        .nav-menu { list-style: none; flex: 1; }
-        .nav-item { margin-bottom: 0.5rem; }
+        .brand-text h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-text p {
+            font-size: 0.75rem;
+            opacity: 0.6;
+        }
+
+        .nav-menu {
+            list-style: none;
+            flex: 1;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
         .nav-link {
-            display: flex; align-items: center; gap: 12px; padding: 0.8rem 1.2rem;
-            color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 12px;
-            transition: var(--transition); cursor: pointer; border: none; background: transparent;
-            width: 100%; font-size: 0.95rem; text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.8rem 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: var(--transition);
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-size: 0.95rem;
+            text-align: left;
         }
-        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
         .nav-link.active {
-            background: var(--primary); color: white;
+            background: var(--primary);
+            color: white;
             box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
         }
-        .nav-link i { width: 20px; text-align: center; }
 
-        .main-content {
-            flex: 1; margin-left: var(--sidebar-width); padding: 2rem;
-            transition: var(--transition); max-width: calc(100vw - var(--sidebar-width));
+        .nav-link i {
+            width: 20px;
+            text-align: center;
         }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
-        .header-title h2 { font-size: 1.8rem; font-weight: 700; color: #1e293b; }
-        .header-title p { color: #64748b; margin-top: 4px; }
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            transition: var(--transition);
+            max-width: calc(100vw - var(--sidebar-width));
+        }
 
-        .view { display: none; animation: fadeIn 0.4s ease-out; }
-        .view.active { display: block; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header-title h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .header-title p {
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .view {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .view.active {
+            display: block;
+        }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .dashboard-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .stat-card {
-            background: white; padding: 1.5rem; border-radius: 20px; box-shadow: var(--card-shadow);
-            display: flex; align-items: center; gap: 1.5rem; transition: var(--transition);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .stat-card:hover { transform: translateY(-5px); }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
         .stat-icon {
-            width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
         }
-        .icon-revenue { background: rgba(76, 201, 240, 0.1); color: var(--success); }
-        .icon-orders { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
-        .icon-clients { background: rgba(247, 37, 133, 0.1); color: var(--warning); }
-        .icon-pending { background: rgba(72, 149, 239, 0.1); color: var(--info); }
-        .stat-info h3 { font-size: 0.9rem; color: #64748b; margin-bottom: 5px; }
-        .stat-info p { font-size: 1.4rem; font-weight: 700; color: #1e293b; }
 
-        .charts-container { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-        .chart-card { background: white; padding: 1.5rem; border-radius: 24px; box-shadow: var(--card-shadow); }
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .chart-header h3 { font-size: 1.1rem; font-weight: 600; }
+        .icon-revenue {
+            background: rgba(76, 201, 240, 0.1);
+            color: var(--success);
+        }
 
-        .table-card { background: white; padding: 1.5rem; border-radius: 24px; box-shadow: var(--card-shadow); overflow: hidden; }
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 1rem; color: #64748b; font-weight: 600; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
-        td { padding: 1rem; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 0.9rem; }
-        tr:last-child td { border-bottom: none; }
+        .icon-orders {
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+        }
 
-        .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-        .status-done { background: rgba(76, 201, 240, 0.1); color: #00b4d8; }
-        .status-pending { background: rgba(247, 37, 133, 0.1); color: #f72585; }
-        .status-progress { background: rgba(67, 97, 238, 0.1); color: #4361ee; }
+        .icon-clients {
+            background: rgba(247, 37, 133, 0.1);
+            color: var(--warning);
+        }
+
+        .icon-pending {
+            background: rgba(72, 149, 239, 0.1);
+            color: var(--info);
+        }
+
+        .stat-info h3 {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+
+        .stat-info p {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 24px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .table-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 24px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            color: #64748b;
+            font-weight: 600;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            color: #1e293b;
+            font-size: 0.9rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-done {
+            background: rgba(76, 201, 240, 0.1);
+            color: #00b4d8;
+        }
+
+        .status-pending {
+            background: rgba(247, 37, 133, 0.1);
+            color: #f72585;
+        }
+
+        .status-progress {
+            background: rgba(67, 97, 238, 0.1);
+            color: #4361ee;
+        }
 
         .btn {
-            padding: 0.8rem 1.5rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer;
-            transition: var(--transition); display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
         }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--secondary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3); }
-        .btn-outline { background: transparent; border: 1.5px solid #e2e8f0; color: #64748b; }
-        .btn-outline:hover { background: #f8f9fa; color: #1e293b; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
 
-        .input-group { margin-bottom: 1.5rem; }
-        .input-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; color: #475569; }
-        .input-control {
-            width: 100%; padding: 0.8rem 1rem; border-radius: 12px; border: 1.5px solid #e2e8f0; transition: var(--transition); font-size: 0.95rem;
+        .btn-primary {
+            background: var(--primary);
+            color: white;
         }
-        .input-control:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1); }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #e2e8f0;
+            color: #64748b;
+        }
+
+        .btn-outline:hover {
+            background: #f8f9fa;
+            color: #1e293b;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        .input-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            border: 1.5px solid #e2e8f0;
+            transition: var(--transition);
+            font-size: 0.95rem;
+        }
+
+        .input-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
 
         .modal {
-            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px);
-            display: none; align-items: center; justify-content: center; z-index: 2000; padding: 1rem;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 1rem;
         }
-        .modal.is-open { display: flex; }
-        .modal-content {
-            background: white; width: 100%; max-width: 600px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-            overflow: hidden; animation: modalIn 0.3s ease-out;
-        }
-        .modal-content.large { max-width: 900px; }
-        @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.95) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .modal-header { padding: 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 1.5rem; max-height: 80vh; overflow-y: auto; }
-        .modal-footer { padding: 1.5rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; }
 
-        .os-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .modal.is-open {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            animation: modalIn 0.3s ease-out;
+        }
+
+        .modal-content.large {
+            max-width: 900px;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .os-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
 
         @media (max-width: 1024px) {
-            .charts-container { grid-template-columns: 1fr; }
-            .sidebar { width: 80px; padding: 2rem 0.5rem; }
-            .brand-text, .nav-link span { display: none; }
-            .main-content { margin-left: 80px; max-width: calc(100vw - 80px); }
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                width: 80px;
+                padding: 2rem 0.5rem;
+            }
+
+            .brand-text,
+            .nav-link span {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 80px;
+                max-width: calc(100vw - 80px);
+            }
         }
+
         @media print {
-            .sidebar, .btn, .header-actions { display: none !important; }
-            .main-content { margin-left: 0; padding: 0; max-width: 100%; }
-            .view { display: block !important; }
-            .chart-card, .stat-card { box-shadow: none; border: 1px solid #ddd; }
+
+            .sidebar,
+            .btn,
+            .header-actions {
+                display: none !important;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 0;
+                max-width: 100%;
+            }
+
+            .view {
+                display: block !important;
+            }
+
+            .chart-card,
+            .stat-card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
         }
-            /* Estilos para alertas */
-    .alert { padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; font-weight: 600; }
-    .alert-danger { background: rgba(239, 68, 68, 0.1); color: #dc2626; border-left: 4px solid #dc2626; }
-    .alert i { font-size: 1.2rem; }
-    /* Badge de status melhorado */
-    .badge { padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
-    .badge-atraso { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
-    .badge-pendente { background: rgba(251, 191, 36, 0.1); color: #f59e0b; }
-    .badge-ok { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
-    /* Botões de ação */
-    .btn-editar { background: var(--primary); color: white; }
-    .btn-editar:hover { background: var(--secondary); transform: translateY(-2px); }
-    .btn-detalhes { background: var(--info); color: white; }
-    .btn-detalhes:hover { background: #3b82f6; transform: translateY(-2px); }
+
+        /* Estilos para alertas */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border-left: 4px solid #dc2626;
+        }
+
+        .alert i {
+            font-size: 1.2rem;
+        }
+
+        /* Badge de status melhorado */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-atraso {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+
+        .badge-pendente {
+            background: rgba(251, 191, 36, 0.1);
+            color: #f59e0b;
+        }
+
+        .badge-ok {
+            background: rgba(34, 197, 94, 0.1);
+            color: #16a34a;
+        }
+
+        /* Botões de ação */
+        .btn-editar {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-editar:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-detalhes {
+            background: var(--info);
+            color: white;
+        }
+
+        .btn-detalhes:hover {
+            background: #3b82f6;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
+
 <body>
     <div class="app">
         <!-- Sidebar -->
@@ -214,7 +593,7 @@
                     <p>Professional Pro</p>
                 </div>
             </div>
-            
+
             <nav class="nav-menu">
                 <button class="nav-link active" data-view="dashboard">
                     <i class="fas fa-chart-line"></i>
@@ -241,7 +620,7 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            
+
             <!-- VIEW: DASHBOARD -->
             <section id="view-dashboard" class="view active">
                 <div class="header">
@@ -254,29 +633,45 @@
                 <div class="dashboard-grid">
                     <div class="stat-card">
                         <div class="stat-icon icon-revenue"><i class="fas fa-dollar-sign"></i></div>
-                        <div class="stat-info"><h3>Receita Mensal</h3><p id="dash-receita">R$ 0,00</p></div>
+                        <div class="stat-info">
+                            <h3>Receita Mensal</h3>
+                            <p id="dash-receita">R$ 0,00</p>
+                        </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon icon-orders"><i class="fas fa-clipboard-list"></i></div>
-                        <div class="stat-info"><h3>OS Concluídas</h3><p id="dash-os-concluidas">0</p></div>
+                        <div class="stat-info">
+                            <h3>OS Concluídas</h3>
+                            <p id="dash-os-concluidas">0</p>
+                        </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon icon-clients"><i class="fas fa-user-friends"></i></div>
-                        <div class="stat-info"><h3>Novos Clientes</h3><p id="dash-novos-clientes">0</p></div>
+                        <div class="stat-info">
+                            <h3>Novos Clientes</h3>
+                            <p id="dash-novos-clientes">0</p>
+                        </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon icon-pending"><i class="fas fa-exclamation-circle"></i></div>
-                        <div class="stat-info"><h3>OS Pendentes</h3><p id="dash-os-pendentes">0</p></div>
+                        <div class="stat-info">
+                            <h3>OS Pendentes</h3>
+                            <p id="dash-os-pendentes">0</p>
+                        </div>
                     </div>
                 </div>
 
                 <div class="charts-container">
                     <div class="chart-card">
-                        <div class="chart-header"><h3>Fluxo de Caixa (7 dias)</h3></div>
+                        <div class="chart-header">
+                            <h3>Fluxo de Caixa (7 dias)</h3>
+                        </div>
                         <canvas id="revenueChart" height="100"></canvas>
                     </div>
                     <div class="chart-card">
-                        <div class="chart-header"><h3>Status das OS</h3></div>
+                        <div class="chart-header">
+                            <h3>Status das OS</h3>
+                        </div>
                         <canvas id="statusChart"></canvas>
                     </div>
                 </div>
@@ -289,7 +684,13 @@
                     <div class="table-container">
                         <table>
                             <thead>
-                                <tr><th>Nº OS</th><th>Cliente</th><th>Veículo</th><th>Valor</th><th>Status</th></tr>
+                                <tr>
+                                    <th>Nº OS</th>
+                                    <th>Cliente</th>
+                                    <th>Veículo</th>
+                                    <th>Valor</th>
+                                    <th>Status</th>
+                                </tr>
                             </thead>
                             <tbody id="dash-recent-os"></tbody>
                         </table>
@@ -298,33 +699,48 @@
             </section>
 
             <!-- VIEW: CLIENTES -->
-            
             <section id="view-clientes" class="view">
                 <div class="header">
-                    <div class="header-title"><h2>Gestão de Clientes</h2><p>Gerencie sua base de contatos</p></div>
+                    <div class="header-title">
+                        <h2>Gestão de Clientes</h2>
+                        <p>Gerencie sua base de contatos</p>
+                    </div>
                     <div class="header-actions">
-                        <button class="btn btn-primary" onclick="abrirModalCliente()">
+                        <button class="btn btn-primary" id="btn-novo-cliente">
                             <i class="fas fa-plus"></i> Novo Cliente
                         </button>
                     </div>
                 </div>
                 <div class="table-card">
                     <div class="chart-header" style="padding-bottom: 1rem;">
-                        <input type="text" id="clientes-busca" class="input-control" placeholder="Pesquisar cliente..." oninput="renderClientesTabela()">
+                        <input type="text" id="clientes-busca" class="input-control" placeholder="Pesquisar cliente...">
                     </div>
                     <div class="table-container">
                         <table>
-                            <thead><tr><th>Nome</th><th>Contato</th><th>Veículo Atua<th>ID</th>l</th><th>Ações</th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome</th>
+                                    <th>Contato</th>
+                                    <th>Documento</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
                             <tbody id="clientes-tbody"></tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
+
             <!-- VIEW: OS -->
             <section id="view-os" class="view">
                 <div class="header">
-                    <div class="header-title"><h2>Ordens de Serviço</h2><p>Acompanhamento de reparos</p></div>
+                    <div class="header-title">
+                        <h2>Ordens de Serviço</h2>
+                        <p>Acompanhamento de reparos</p>
+                    </div>
                     <div class="header-actions">
                         <button class="btn btn-primary" onclick="abrirModalOS()">
                             <i class="fas fa-file-medical"></i> Abrir OS
@@ -333,7 +749,8 @@
                 </div>
                 <div class="table-card">
                     <div class="chart-header" style="gap: 1rem;">
-                        <input type="text" id="os-busca" class="input-control" placeholder="Buscar OS..." oninput="renderOSTabela()">
+                        <input type="text" id="os-busca" class="input-control" placeholder="Buscar OS..."
+                            oninput="renderOSTabela()">
                         <select id="os-filtro-status" class="input-control" onchange="renderOSTabela()">
                             <option value="">Todos os Status</option>
                             <option value="aberto">Aberto</option>
@@ -343,7 +760,17 @@
                     </div>
                     <div class="table-container">
                         <table>
-                            <thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Veículo</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>Nº</th>
+                                    <th>Data</th>
+                                    <th>Cliente</th>
+                                    <th>Veículo</th>
+                                    <th>Valor</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
                             <tbody id="os-tbody"></tbody>
                         </table>
                     </div>
@@ -353,21 +780,49 @@
             <!-- VIEW: CAIXA -->
             <section id="view-caixa" class="view">
                 <div class="header">
-                    <div class="header-title"><h2>Fluxo de Caixa</h2><p>Entradas e saídas</p></div>
+                    <div class="header-title">
+                        <h2>Fluxo de Caixa</h2>
+                        <p>Entradas e saídas</p>
+                    </div>
                     <div class="header-actions">
-                        <button class="btn btn-success" onclick="abrirModalCaixa('entrada')"><i class="fas fa-arrow-down"></i> Entrada</button>
-                        <button class="btn btn-danger" onclick="abrirModalCaixa('saida')"><i class="fas fa-arrow-up"></i> Saída</button>
+                        <button class="btn btn-success" onclick="abrirModalCaixa('entrada')"><i
+                                class="fas fa-arrow-down"></i> Entrada</button>
+                        <button class="btn btn-danger" onclick="abrirModalCaixa('saida')"><i
+                                class="fas fa-arrow-up"></i> Saída</button>
                     </div>
                 </div>
                 <div class="dashboard-grid">
-                    <div class="stat-card"><div class="stat-info"><h3>Total Entradas</h3><p id="caixa-total-entradas" style="color:#10b981">R$ 0,00</p></div></div>
-                    <div class="stat-card"><div class="stat-info"><h3>Total Saídas</h3><p id="caixa-total-saidas" style="color:#ef4444">R$ 0,00</p></div></div>
-                    <div class="stat-card"><div class="stat-info"><h3>Saldo Atual</h3><p id="caixa-saldo">R$ 0,00</p></div></div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Total Entradas</h3>
+                            <p id="caixa-total-entradas" style="color:#10b981">R$ 0,00</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Total Saídas</h3>
+                            <p id="caixa-total-saidas" style="color:#ef4444">R$ 0,00</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Saldo Atual</h3>
+                            <p id="caixa-saldo">R$ 0,00</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="table-card">
                     <div class="table-container">
                         <table>
-                            <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Ações</th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th>Valor</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
                             <tbody id="caixa-tbody"></tbody>
                         </table>
                     </div>
@@ -377,9 +832,13 @@
             <!-- VIEW: RELATORIOS -->
             <section id="view-relatorios" class="view">
                 <div class="header">
-                    <div class="header-title"><h2>Relatórios</h2><p>Análise de performance</p></div>
+                    <div class="header-title">
+                        <h2>Relatórios</h2>
+                        <p>Análise de performance</p>
+                    </div>
                     <div class="header-actions">
-                        <button class="btn btn-outline" onclick="window.print()"><i class="fas fa-file-pdf"></i> PDF</button>
+                        <button class="btn btn-outline" onclick="window.print()"><i class="fas fa-file-pdf"></i>
+                            PDF</button>
                     </div>
                 </div>
                 <div class="table-card">
@@ -390,91 +849,121 @@
     </div>
 
     <!-- MODAL CLIENTE -->
-    <div 378
     <div id="modal-cliente" class="modal">
-    <div class="modal-content">
-      <div class="modal-header"><h3 id="modal-cliente-titulo">Cliente</h3><button onclick="fecharModal('modal-cliente')">×</button></div>
-      <form id="form-cliente">
-        <div class="modal-body">
-          <input type="hidden" id="cliente-id">
-          <div class="input-group"><label>ID do Cliente</label><input type="text" id="cliente-id-sequencial" class="input-control" disabled style="background:#f1f5f9;"></div>
-          <div class="input-group"><label>Nome *</label><input type="text" id="cliente-nome" class="input-control" required></div>
-          <div class="os-form-grid">
-            <div class="input-group"><label>CPF/CNPJ</label><input type="text" id="cliente-documento" class="input-control"></div>
-            <div class="input-group"><label>Telefone</label><input type="text" id="cliente-telefone" class="input-control"></div>
-          </div>
-          <div class="input-group"><label>Email</label><input type="email" id="cliente-email" class="input-control"></div>
-          <div class="input-group"><label>Endereço</label><input type="text" id="cliente-endereco" class="input-control"></div>
-          <div class="os-form-grid">
-            <div class="input-group"><label>Veículo (Modelo)</label><input type="text" id="cliente-veiculo-modelo" class="input-control"></div>
-            <div class="input-group"><label>Ano</label><input type="text" id="cliente-veiculo-ano" class="input-control"></div>
-          </div>
-          <div class="input-group"><label>Placa do Veículo</label><input type="text" id="cliente-veiculo-placa" class="input-control" placeholder="ABC-1234"></div>
-          <div class="input-group"><label>Observações</label><textarea id="cliente-observacoes" class="input-control" rows="2"></textarea></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-cliente-titulo">Cliente</h3><button onclick="fecharModal('modal-cliente')">×</button>
+            </div>
+            <form id="form-cliente">
+                <div class="modal-body">
+                    <input type="hidden" id="cliente-id">
+                    <div class="input-group"><label>ID do Cliente</label><input type="text" id="cliente-id-sequencial"
+                            class="input-control" disabled style="background:#f1f5f9;"></div>
+                    <div class="input-group"><label>Nome *</label><input type="text" id="cliente-nome"
+                            class="input-control" required></div>
+                    <div class="os-form-grid">
+                        <div class="input-group"><label>CPF/CNPJ</label><input type="text" id="cliente-documento"
+                                class="input-control"></div>
+                        <div class="input-group"><label>Telefone</label><input type="text" id="cliente-telefone"
+                                class="input-control"></div>
+                    </div>
+                    <div class="input-group"><label>Email</label><input type="email" id="cliente-email"
+                            class="input-control"></div>
+                    <div class="input-group"><label>Endereço</label><input type="text" id="cliente-endereco"
+                            class="input-control"></div>
+                    <div class="os-form-grid">
+                        <div class="input-group"><label>Veículo (Modelo)</label><input type="text"
+                                id="cliente-veiculo-modelo" class="input-control"></div>
+                        <div class="input-group"><label>Ano</label><input type="text" id="cliente-veiculo-ano"
+                                class="input-control"></div>
+                    </div>
+                    <div class="input-group"><label>Placa do Veículo</label><input type="text"
+                            id="cliente-veiculo-placa" class="input-control" placeholder="ABC-1234"></div>
+                    <div class="input-group"><label>Observações</label><textarea id="cliente-observacoes"
+                            class="input-control" rows="2"></textarea></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline"
+                        onclick="fecharModal('modal-cliente')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline" onclick="fecharModal('modal-cliente')">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar</button>
-        </div>
-      </form>
     </div>
-  </div>
 
-      <!-- MODAL DETALHES CLIENTE -->
-  <div id="modal-cliente-detalhes" class="modal">
-    <div class="modal-content large">
-      <div class="modal-header"><h3>Detalhes do Cliente</h3><button id="btn-fechar-detalhes-cliente" onclick="fecharModal('modal-cliente-detalhes')">×</button></div>
-      <div class="modal-body">
-        <!-- Alerta de Atraso -->
-        <div id="det-cliente-alerta-atraso" style="display:none; margin-bottom:1.5rem;"></div>
-        
-        <!-- Informações do Cliente -->
-        <div class="table-card" style="margin-bottom:1.5rem;">
-          <h4 style="margin-bottom:1rem; color:var(--primary);"><i class="fas fa-user-circle"></i> Informações do Cliente</h4>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-            <div><strong>ID:</strong> <span id="det-cliente-id-seq"></span></div>
-            <div><strong>Nome:</strong> <span id="det-cliente-nome"></span></div>
-            <div><strong>CPF/CNPJ:</strong> <span id="det-cliente-documento"></span></div>
-            <div><strong>Placa:</strong> <span id="det-cliente-placa"></span></div>
-            <div><strong>Veículo:</strong> <span id="det-cliente-veiculo-info"></span></div>
-            <div><strong>Contato:</strong> <span id="det-cliente-contato"></span></div>
-          </div>
-          <div style="margin-top:1rem;">
-            <div><strong>Endereço:</strong> <span id="det-cliente-endereco"></span></div>
-            <div style="margin-top:0.5rem;"><strong>Observações:</strong> <span id="det-cliente-obs"></span></div>
-          </div>
+    <!-- MODAL DETALHES CLIENTE -->
+    <div id="modal-cliente-detalhes" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Detalhes do Cliente</h3><button id="btn-fechar-detalhes-cliente"
+                    onclick="fecharModal('modal-cliente-detalhes')">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Alerta de Atraso -->
+                <div id="det-cliente-alerta-atraso" style="display:none; margin-bottom:1.5rem;"></div>
+
+                <!-- Informações do Cliente -->
+                <div class="table-card" style="margin-bottom:1.5rem;">
+                    <h4 style="margin-bottom:1rem; color:var(--primary);"><i class="fas fa-user-circle"></i> Informações
+                        do Cliente</h4>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                        <div><strong>ID:</strong> <span id="det-cliente-id-seq"></span></div>
+                        <div><strong>Nome:</strong> <span id="det-cliente-nome"></span></div>
+                        <div><strong>CPF/CNPJ:</strong> <span id="det-cliente-documento"></span></div>
+                        <div><strong>Placa:</strong> <span id="det-cliente-placa"></span></div>
+                        <div><strong>Veículo:</strong> <span id="det-cliente-veiculo-info"></span></div>
+                        <div><strong>Contato:</strong> <span id="det-cliente-contato"></span></div>
+                    </div>
+                    <div style="margin-top:1rem;">
+                        <div><strong>Endereço:</strong> <span id="det-cliente-endereco"></span></div>
+                        <div style="margin-top:0.5rem;"><strong>Observações:</strong> <span id="det-cliente-obs"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Histórico de Ordens de Serviço -->
+                <div class="table-card">
+                    <h4 style="margin-bottom:1rem; color:var(--primary);"><i class="fas fa-history"></i> Histórico de
+                        Serviços</h4>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nº OS</th>
+                                    <th>Data</th>
+                                    <th>Descrição</th>
+                                    <th>Valor</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="det-cliente-os-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline"
+                    onclick="fecharModal('modal-cliente-detalhes')">Fechar</button>
+            </div>
         </div>
-        
-        <!-- Histórico de Ordens de Serviço -->
-        <div class="table-card">
-          <h4 style="margin-bottom:1rem; color:var(--primary);"><i class="fas fa-history"></i> Histórico de Serviços</h4>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr><th>Nº OS</th><th>Data</th><th>Descrição</th><th>Valor</th><th>Status</th></tr>
-              </thead>
-              <tbody id="det-cliente-os-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" onclick="fecharModal('modal-cliente-detalhes')">Fechar</button>
-      </div>
     </div>
-  </div>
 
     <!-- MODAL OS -->
     <div id="modal-os" class="modal">
         <div class="modal-content large">
-            <div class="modal-header"><h3>Ordem de Serviço</h3><button onclick="fecharModal('modal-os')">&times;</button></div>
+            <div class="modal-header">
+                <h3>Ordem de Serviço</h3><button onclick="fecharModal('modal-os')">&times;</button>
+            </div>
             <form id="form-os">
                 <div class="modal-body">
                     <input type="hidden" id="os-id">
                     <div class="os-form-grid">
-                        <div class="input-group"><label>Cliente *</label><select id="os-cliente-id" class="input-control" required></select></div>
-                        <div class="input-group"><label>Veículo</label><input type="text" id="os-veiculo" class="input-control"></div>
-                        <div class="input-group"><label>Data</label><input type="date" id="os-data-abertura" class="input-control"></div>
+                        <div class="input-group"><label>Cliente *</label><select id="os-cliente-id"
+                                class="input-control" required></select></div>
+                        <div class="input-group"><label>Veículo</label><input type="text" id="os-veiculo"
+                                class="input-control"></div>
+                        <div class="input-group"><label>Data</label><input type="date" id="os-data-abertura"
+                                class="input-control"></div>
                         <div class="input-group"><label>Status</label>
                             <select id="os-status" class="input-control">
                                 <option value="aberto">Aberto</option>
@@ -483,8 +972,10 @@
                             </select>
                         </div>
                     </div>
-                    <div class="input-group"><label>Valor Total (R*) *</label><input type="number" step="0.01" id="os-valor-total" class="input-control" required></div>
-                    <div class="input-group"><label>Descrição</label><textarea id="os-descricao" class="input-control" rows="2"></textarea></div>
+                    <div class="input-group"><label>Valor Total (R*) *</label><input type="number" step="0.01"
+                            id="os-valor-total" class="input-control" required></div>
+                    <div class="input-group"><label>Descrição</label><textarea id="os-descricao" class="input-control"
+                            rows="2"></textarea></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" onclick="fecharModal('modal-os')">Cancelar</button>
@@ -497,13 +988,18 @@
     <!-- MODAL CAIXA -->
     <div id="modal-caixa" class="modal">
         <div class="modal-content">
-            <div class="modal-header"><h3 id="modal-caixa-titulo">Lançamento</h3><button onclick="fecharModal('modal-caixa')">&times;</button></div>
+            <div class="modal-header">
+                <h3 id="modal-caixa-titulo">Lançamento</h3><button onclick="fecharModal('modal-caixa')">&times;</button>
+            </div>
             <form id="form-caixa">
                 <div class="modal-body">
                     <input type="hidden" id="caixa-tipo">
-                    <div class="input-group"><label>Data</label><input type="date" id="caixa-data" class="input-control" required></div>
-                    <div class="input-group"><label>Descrição</label><input type="text" id="caixa-descricao" class="input-control" required></div>
-                    <div class="input-group"><label>Valor (R$)</label><input type="number" step="0.01" id="caixa-valor" class="input-control" required></div>
+                    <div class="input-group"><label>Data</label><input type="date" id="caixa-data" class="input-control"
+                            required></div>
+                    <div class="input-group"><label>Descrição</label><input type="text" id="caixa-descricao"
+                            class="input-control" required></div>
+                    <div class="input-group"><label>Valor (R$)</label><input type="number" step="0.01" id="caixa-valor"
+                            class="input-control" required></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" onclick="fecharModal('modal-caixa')">Cancelar</button>
@@ -534,9 +1030,9 @@
         const fmtDate = d => d ? d.split('-').reverse().join('/') : '-';
         const isoToday = () => new Date().toISOString().split('T')[0];
 
-        function toast(msg, type='success') {
+        function toast(msg, type = 'success') {
             const el = document.createElement('div');
-            el.style.cssText = `background:${type==='success'?'#10b981':'#ef4444'}; color:white; padding:12px 24px; border-radius:12px; margin-bottom:10px; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.1);`;
+            el.style.cssText = `background:${type === 'success' ? '#10b981' : '#ef4444'}; color:white; padding:12px 24px; border-radius:12px; margin-bottom:10px; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.1);`;
             el.textContent = msg;
             document.getElementById('toast-container').appendChild(el);
             setTimeout(() => el.remove(), 3000);
@@ -548,60 +1044,31 @@
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
             document.getElementById(`view-${v}`).classList.add('active');
             document.querySelector(`[data-view="${v}"]`).classList.add('active');
-            if(v==='dashboard') updateDash();
-            if(v==='clientes') renderClientesTabela();
-            if(v==='os') renderOSTabela();
-            if(v==='caixa') renderCaixa();
+
+            if (v === 'dashboard') updateDash();
+            if (v === 'clientes') {
+                // Aguardar o próximo tick para garantir que a view está renderizada
+                setTimeout(() => {
+                    if (typeof window.initClientes === 'function') {
+                        window.initClientes();
+                    }
+                }, 0);
+            }
+            if (v === 'os') renderOSTabela();
+            if (v === 'caixa') renderCaixa();
         }
-        document.querySelectorAll('.nav-link').forEach(btn => {
-            btn.onclick = () => goToView(btn.dataset.view);
-        });
+
 
         // --- MODALS ---
         function fecharModal(id) { document.getElementById(id).classList.remove('is-open'); }
 
-        // --- CLIENTES ---
-        function abrirModalCliente(id=null) {
-            const f = document.getElementById('form-cliente'); f.reset();
-            if(id) {
-                const c = db.clientes.find(x => x.id === id);
-                document.getElementById('cliente-id').value = c.id;
-                document.getElementById('cliente-nome').value = c.nome;
-                document.getElementById('cliente-telefone').value = c.telefone;
-                document.getElementById('cliente-veiculo-modelo').value = c.veiculoModelo;
-            } else { document.getElementById('cliente-id').value = ''; }
-            document.getElementById('modal-cliente').classList.add('is-open');
-        }
-        document.getElementById('form-cliente').onsubmit = e => {
-            e.preventDefault();
-            const id = document.getElementById('cliente-id').value || Date.now().toString();
-            const data = {
-                id,
-                nome: document.getElementById('cliente-nome').value,
-                telefone: document.getElementById('cliente-telefone').value,
-                veiculoModelo: document.getElementById('cliente-veiculo-modelo').value
-            };
-            const idx = db.clientes.findIndex(x => x.id === id);
-            if(idx>-1) db.clientes[idx]=data; else db.clientes.push(data);
-            save(); fecharModal('modal-cliente'); renderClientesTabela(); toast('Cliente salvo!');
-        };
-        function renderClientesTabela() {
-            const tb = document.getElementById('clientes-tbody'); tb.innerHTML = '';
-            db.clientes.forEach(c => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${c.nome}</td><td>${c.telefone}</td><td>${c.veiculoModelo}</td>
-                <td><button onclick="abrirModalCliente('${c.id}')">Edit</button></td>`;
-                tb.appendChild(tr);
-            });
-        }
-
         // --- OS ---
-        function abrirModalOS(id=null) {
+        function abrirModalOS(id = null) {
             const sel = document.getElementById('os-cliente-id');
             sel.innerHTML = db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
             const f = document.getElementById('form-os'); f.reset();
             document.getElementById('os-data-abertura').value = isoToday();
-            if(id) { /* implement edit if needed */ }
+            if (id) { /* implement edit if needed */ }
             document.getElementById('modal-os').classList.add('is-open');
         }
         document.getElementById('form-os').onsubmit = e => {
@@ -616,7 +1083,7 @@
                 valorTotal: parseFloat(document.getElementById('os-valor-total').value)
             };
             db.os.push(os);
-            if(os.status==='concluido') db.caixa.push({id:Date.now()+'_c', tipo:'entrada', data:os.dataAbertura, descricao:'OS #'+os.numero, valor:os.valorTotal});
+            if (os.status === 'concluido') db.caixa.push({ id: Date.now() + '_c', tipo: 'entrada', data: os.dataAbertura, descricao: 'OS #' + os.numero, valor: os.valorTotal });
             save(); fecharModal('modal-os'); renderOSTabela(); toast('OS Criada!');
         };
         function renderOSTabela() {
@@ -624,7 +1091,7 @@
             db.os.forEach(o => {
                 const c = db.clientes.find(x => x.id === o.clienteId);
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>#${o.numero}</td><td>${fmtDate(o.dataAbertura)}</td><td>${c?c.nome:'-'}</td><td>${o.veiculo}</td><td>${fmtBRL(o.valorTotal)}</td><td>${o.status}</td><td>-</td>`;
+                tr.innerHTML = `<td>#${o.numero}</td><td>${fmtDate(o.dataAbertura)}</td><td>${c ? c.nome : '-'}</td><td>${o.veiculo}</td><td>${fmtBRL(o.valorTotal)}</td><td>${o.status}</td><td>-</td>`;
                 tb.appendChild(tr);
             });
         }
@@ -649,37 +1116,42 @@
         };
         function renderCaixa() {
             const tb = document.getElementById('caixa-tbody'); tb.innerHTML = '';
-            let ent=0, sai=0;
+            let ent = 0, sai = 0;
             db.caixa.forEach(m => {
-                if(m.tipo==='entrada') ent+=m.valor; else sai+=m.valor;
+                if (m.tipo === 'entrada') ent += m.valor; else sai += m.valor;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td>${fmtDate(m.data)}</td><td>${m.tipo}</td><td>${m.descricao}</td><td>${fmtBRL(m.valor)}</td><td>-</td>`;
                 tb.appendChild(tr);
             });
             document.getElementById('caixa-total-entradas').textContent = fmtBRL(ent);
             document.getElementById('caixa-total-saidas').textContent = fmtBRL(sai);
-            document.getElementById('caixa-saldo').textContent = fmtBRL(ent-sai);
+            document.getElementById('caixa-saldo').textContent = fmtBRL(ent - sai);
         }
+
+        let revenueChartInstance = null;
+        let statusChartInstance = null;
 
         // --- DASHBOARD ---
         function updateDash() {
             document.getElementById('current-date-display').textContent = new Date().toLocaleDateString();
-            const rec = db.caixa.filter(m=>m.tipo==='entrada').reduce((a,b)=>a+b.valor,0);
+            const rec = db.caixa.filter(m => m.tipo === 'entrada').reduce((a, b) => a + b.valor, 0);
             document.getElementById('dash-receita').textContent = fmtBRL(rec);
-            document.getElementById('dash-os-concluidas').textContent = db.os.filter(o=>o.status==='concluido').length;
+            document.getElementById('dash-os-concluidas').textContent = db.os.filter(o => o.status === 'concluido').length;
             document.getElementById('dash-novos-clientes').textContent = db.clientes.length;
-            document.getElementById('dash-os-pendentes').textContent = db.os.filter(o=>o.status!=='concluido').length;
-            
+            document.getElementById('dash-os-pendentes').textContent = db.os.filter(o => o.status !== 'concluido').length;
+
             const ctx1 = document.getElementById('revenueChart').getContext('2d');
-            new Chart(ctx1, { type:'line', data:{ labels:['S','T','Q','Q','S','S','D'], datasets:[{label:'Fluxo', data:[10,20,15,30,25,40,35], borderColor:'#4361ee'}] }});
+            new Chart(ctx1, { type: 'line', data: { labels: ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'], datasets: [{ label: 'Fluxo', data: [10, 20, 15, 30, 25, 40, 35], borderColor: '#4361ee' }] } });
             const ctx2 = document.getElementById('statusChart').getContext('2d');
-            new Chart(ctx2, { type:'doughnut', data:{ labels:['OK','Ab','And'], datasets:[{data:[5,2,3], backgroundColor:['#4cc9f0','#4361ee','#f72585']}] }});
+            new Chart(ctx2, { type: 'doughnut', data: { labels: ['OK', 'Ab', 'And'], datasets: [{ data: [5, 2, 3], backgroundColor: ['#4cc9f0', '#4361ee', '#f72585'] }] } });
         }
 
         window.onload = () => { updateDash(); };
     </script>
 
-  <script src="js/storage.js"></script>
-  <script src="js/clientes.js"></script>
-  <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:9999;"></div></body>
+    <script src="js/storage.js"></script>
+    <script src="js/clientes.js"></script>
+    <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:9999;"></div>
+</body>
+
 </html>

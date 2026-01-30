@@ -53,7 +53,33 @@ const Clientes = {
 
         if (btnNovaOsDoDetalhe) {
             btnNovaOsDoDetalhe.addEventListener('click', () => {
-                Utils.showToast('Módulo de OS em desenvolvimento...', 'info');
+                console.log('🟢 Nova OS do detalhe clicado');
+
+                // Fechar modal de detalhes do cliente
+                this.closeDetalhes();
+
+                // Navegar para a view de OS
+                if (window.router) {
+                    window.router.navigateTo('os');
+                }
+
+                // Abrir modal de Nova OS com dados pré-preenchidos
+                setTimeout(() => {
+                    if (window.OS && window.OS.openModal) {
+                        // Abrir modal limpo
+                        window.OS.openModal();
+
+                        // Preencher dados do cliente
+                        setTimeout(() => {
+                            const selectCliente = document.getElementById('os-cliente');
+                            if (selectCliente) {
+                                selectCliente.value = this.clienteAtualId;
+                                // Disparar evento change para preencher dados do veículo
+                                selectCliente.dispatchEvent(new Event('change'));
+                            }
+                        }, 100);
+                    }
+                }, 400);
             });
         }
 

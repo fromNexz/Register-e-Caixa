@@ -4,24 +4,107 @@ if (window.Caixa) {
 } else {
   window.Caixa = {
     initialized: false,
+    tipoAtual: null,
 
     init() {
+       // === TOGGLE FILTROS ===
+      const btnToggleFiltros = document.getElementById('btn-toggle-filtros');
+      const filtrosContainer = document.getElementById('filtros-container');
+
+      if (btnToggleFiltros && filtrosContainer) {
+        btnToggleFiltros.addEventListener('click', () => {
+          const isOpen = filtrosContainer.style.display !== 'none';
+          filtrosContainer.style.display = isOpen ? 'none' : 'block';
+          btnToggleFiltros.classList.toggle('ativo');
+        });
+      }
+      
       if (this.initialized) return;
 
       const btnEntrada = document.getElementById('btn-entrada');
       const btnSaida = document.getElementById('btn-saida');
+      const btnFechar = document.getElementById('btn-fechar-modal-caixa');
+      const btnCancelar = document.getElementById('btn-cancelar-caixa');
+      const form = document.getElementById('form-caixa');
+      const modal = document.getElementById('modal-caixa');
+      const backdrop = modal?.querySelector('.modal__backdrop');
 
+      // Event listeners
       if (btnEntrada) {
-        btnEntrada.addEventListener('click', () => {
-          this.abrirModalMovimento('entrada');
-        });
+        btnEntrada.addEventListener('click', () => this.abrirModal('entrada'));
       }
 
       if (btnSaida) {
-        btnSaida.addEventListener('click', () => {
-          this.abrirModalMovimento('saida');
-        });
+        btnSaida.addEventListener('click', () => this.abrirModal('saida'));
       }
+
+      if (btnFechar) {
+        btnFechar.addEventListener('click', () => this.fecharModal());
+      }
+
+      if (btnCancelar) {
+        btnCancelar.addEventListener('click', () => this.fecharModal());
+      }
+
+      if (backdrop) {
+        backdrop.addEventListener('click', () => this.fecharModal());
+      }
+
+      if (form) {
+        form.addEventListener('submit', (e) => this.handleSubmit(e));
+      }
+
+      // === FILTROS ===
+      const caixaBusca = document.getElementById('caixa-busca');
+      const filtroTipo = document.getElementById('filtro-tipo');
+      const filtroCategoria = document.getElementById('filtro-categoria');
+      const filtroStatus = document.getElementById('filtro-status');
+      const filtroFormaPagamento = document.getElementById('filtro-forma-pagamento');
+      const filtroDataInicio = document.getElementById('filtro-data-inicio');
+      const filtroDataFim = document.getElementById('filtro-data-fim');
+      const btnLimparFiltros = document.getElementById('btn-limpar-filtros');
+
+      if (caixaBusca) {
+        caixaBusca.addEventListener('input', () => this.renderTabela());
+      }
+
+      if (filtroTipo) {
+        filtroTipo.addEventListener('change', () => this.renderTabela());
+      }
+
+      if (filtroCategoria) {
+        filtroCategoria.addEventListener('change', () => this.renderTabela());
+      }
+
+      if (filtroStatus) {
+        filtroStatus.addEventListener('change', () => this.renderTabela());
+      }
+
+      if (filtroFormaPagamento) {
+        filtroFormaPagamento.addEventListener('change', () => this.renderTabela());
+      }
+
+      if (filtroDataInicio) {
+        filtroDataInicio.addEventListener('change', () => this.renderTabela());
+      }
+
+      if (filtroDataFim) {
+        filtroDataFim.addEventListener('change', () => this.renderTabela());
+      }
+
+      if (btnLimparFiltros) {
+        btnLimparFiltros.addEventListener('click', () => this.limparFiltros());
+      }
+
+      // Fechar com ESC
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const modalElement = document.getElementById('modal-caixa');
+          if (modalElement?.classList.contains('is-open')) {
+            this.fecharModal();
+          }
+        }
+      });
 
       this.initialized = true;
       console.log('✅ Módulo Caixa inicializado');
@@ -31,6 +114,44 @@ if (window.Caixa) {
       this.init();
       this.renderResumo();
       this.renderTabela();
+    },
+
+    abrirModal(tipo) {
+      this.tipoAtual = tipo;
+      const modal = document.getElementById('modal-caixa');
+      const titulo = document.getElementById('modal-caixa-titulo');
+      const form = document.getElementById('form-caixa');
+      const inputTipo = document.getElementById('caixa-tipo');
+
+      if (!modal || !form) return;
+
+      // Limpar formulário
+      form.reset();
+
+      // Definir tipo
+      inputTipo.value = tipo;
+
+      // Atualizar título e icone
+      if (tipo === 'entrada') {
+        titulo.innerHTML = '<i class="fas fa-arrow-down"></i> Nova Entrada';
+        document.getElementById('caixa-categoria').value = 'venda_os';
+      } else {
+        titulo.innerHTML = '<i class="fas fa-arrow-up"></i> Nova Saída';
+        document.getElementById('caixa-categoria').value = 'fornecedor';
+      }
+
+      // Definir data padrão
+      document.getElementById('caixa-data').value = Utils.getCurrentDate();
+      document.getElementById('caixa-status').value = 'confirmado';
+
+      // Abrir modal
+      modal.classList.add('is-open');
+    },
+
+    fecharModal() {
+      const modal = document.getElementById('modal-caixa');
+      if (modal) modal.classList.remove('is-open');
+      this.tipoAtual = null;
     },
 
     renderResumo() {
@@ -61,13 +182,47 @@ if (window.Caixa) {
 
       const movimentos = window.storage.getMovimentosCaixa();
 
+      // === APLICAR FILTROS ===
+      const busca = document.getElementById('caixa-busca')?.value.toLowerCase() || '';
+      const filtroTipo = document.getElementById('filtro-tipo')?.value || '';
+      const filtroCategoria = document.getElementById('filtro-categoria')?.value || '';
+      const filtroStatus = document.getElementById('filtro-status')?.value || '';
+      const filtroFormaPagamento = document.getElementById('filtro-forma-pagamento')?.value || '';
+      const filtroDataInicio = document.getElementById('filtro-data-inicio')?.value || '';
+      const filtroDataFim = document.getElementById('filtro-data-fim')?.value || '';
+
+      const movimentosFiltrados = movimentos.filter(m => {
+        // Busca por descrição
+        if (busca && !m.descricao.toLowerCase().includes(busca)) return false;
+
+        // Filtro por tipo
+        if (filtroTipo && m.tipo !== filtroTipo) return false;
+
+        // Filtro por categoria
+        if (filtroCategoria && m.categoria !== filtroCategoria) return false;
+
+        // Filtro por status
+        if (filtroStatus && m.status !== filtroStatus) return false;
+
+        // Filtro por forma de pagamento
+        if (filtroFormaPagamento && m.formaPagamento !== filtroFormaPagamento) return false;
+
+        // Filtro por período
+        if (filtroDataInicio && m.data < filtroDataInicio) return false;
+        if (filtroDataFim && m.data > filtroDataFim) return false;
+
+        return true;
+      });
+
       tbody.innerHTML = '';
 
-      if (movimentos.length === 0) {
+      if (movimentosFiltrados.length === 0) {
         tbody.innerHTML = `
           <tr class="empty-row">
             <td colspan="4" style="text-align: center; padding: 2rem; color: #64748b; font-style: italic;">
-              Nenhuma movimentação registrada
+              ${busca || filtroTipo || filtroCategoria || filtroStatus || filtroFormaPagamento || filtroDataInicio || filtroDataFim 
+                ? 'Nenhuma movimentação encontrada com os filtros selecionados' 
+                : 'Nenhuma movimentação registrada'}
             </td>
           </tr>
         `;
@@ -75,10 +230,11 @@ if (window.Caixa) {
       }
 
       // Ordenar por data (mais recente primeiro)
-      movimentos.sort((a, b) => new Date(b.data) - new Date(a.data));
+      movimentosFiltrados.sort((a, b) => new Date(b.data) - new Date(a.data));
 
-      movimentos.forEach(m => {
+      movimentosFiltrados.forEach(m => {
         const tr = document.createElement('tr');
+        
         tr.innerHTML = `
           <td>${Utils.formatDate(m.data)}</td>
           <td>
@@ -88,8 +244,9 @@ if (window.Caixa) {
             </span>
           </td>
           <td>
-            ${m.descricao}
-            ${m.osId ? `<br><small style="color: #64748b;">Vinculado a OS</small>` : ''}
+            <strong>${m.descricao}</strong>
+            ${m.categoria ? `<br><small style="color: #64748b;">📂 ${this.getCategoriaTexto(m.categoria)}</small>` : ''}
+            ${m.observacoes ? `<br><small style="color: #64748b;">📝 ${m.observacoes}</small>` : ''}
           </td>
           <td style="color: ${m.tipo === 'entrada' ? '#10b981' : '#ef4444'}; font-weight: 600;">
             ${m.tipo === 'entrada' ? '+' : '-'} ${Utils.formatCurrency(m.valor)}
@@ -97,31 +254,115 @@ if (window.Caixa) {
         `;
         tbody.appendChild(tr);
       });
+
+      // Atualizar resumo dos filtrados
+      this.atualizarResumoFiltrado(movimentosFiltrados);
     },
 
-    abrirModalMovimento(tipo) {
-      const descricao = prompt(`Digite a descrição da ${tipo}:`);
-      if (!descricao) return;
+    atualizarResumoFiltrado(movimentos) {
+      let totalEntradas = 0;
+      let totalSaidas = 0;
 
-      const valorStr = prompt(`Digite o valor (R$):`);
-      if (!valorStr) return;
+      movimentos.forEach(m => {
+        if (m.tipo === 'entrada') {
+          totalEntradas += m.valor;
+        } else {
+          totalSaidas += m.valor;
+        }
+      });
 
-      const valor = parseFloat(valorStr.replace(',', '.'));
-      if (isNaN(valor) || valor <= 0) {
-        Utils.showToast('Valor inválido!', 'error');
+      const saldo = totalEntradas - totalSaidas;
+
+      const elEntradas = document.getElementById('caixa-total-entradas');
+      const elSaidas = document.getElementById('caixa-total-saidas');
+      const elSaldo = document.getElementById('caixa-saldo');
+
+      if (elEntradas) elEntradas.textContent = Utils.formatCurrency(totalEntradas);
+      if (elSaidas) elSaidas.textContent = Utils.formatCurrency(totalSaidas);
+      if (elSaldo) {
+        elSaldo.textContent = Utils.formatCurrency(saldo);
+        if (saldo > 0) {
+          elSaldo.style.color = '#10b981';
+        } else if (saldo < 0) {
+          elSaldo.style.color = '#ef4444';
+        } else {
+          elSaldo.style.color = '#64748b';
+        }
+      }
+    },
+
+    getCategoriaTexto(categoria) {
+      const categorias = {
+        'venda_os': 'Venda de OS',
+        'venda_pecas': 'Venda de Peças',
+        'servico': 'Serviço Adicional',
+        'devolucao': 'Devolução',
+        'outros': 'Outros',
+        'fornecedor': 'Fornecedor',
+        'funcionarios': 'Funcionários',
+        'aluguel': 'Aluguel',
+        'utilidades': 'Utilidades'
+      };
+      return categorias[categoria] || categoria;
+    },
+
+    limparFiltros() {
+      document.getElementById('caixa-busca').value = '';
+      document.getElementById('filtro-tipo').value = '';
+      document.getElementById('filtro-categoria').value = '';
+      document.getElementById('filtro-status').value = '';
+      document.getElementById('filtro-forma-pagamento').value = '';
+      document.getElementById('filtro-data-inicio').value = '';
+      document.getElementById('filtro-data-fim').value = '';
+      
+      Utils.showToast('Filtros limpos!', 'info');
+      this.renderTabela();
+    },
+
+    handleSubmit(e) {
+      e.preventDefault();
+
+      const tipo = document.getElementById('caixa-tipo').value;
+      const descricao = document.getElementById('caixa-descricao').value.trim();
+      const data = document.getElementById('caixa-data').value;
+      const valor = parseFloat(document.getElementById('caixa-valor').value);
+      const formaPagamento = document.getElementById('caixa-forma-pagamento').value;
+      const categoria = document.getElementById('caixa-categoria').value;
+      const status = document.getElementById('caixa-status').value;
+      const observacoes = document.getElementById('caixa-observacoes').value.trim();
+
+      // Validações
+      if (!descricao) {
+        Utils.showToast('Descrição é obrigatória', 'error');
         return;
       }
 
-      window.storage.addMovimentoCaixa({
+      if (isNaN(valor) || valor <= 0) {
+        Utils.showToast('Valor inválido', 'error');
+        return;
+      }
+
+      // Criar movimento
+      const movimento = {
         tipo: tipo,
         descricao: descricao,
+        data: data,
         valor: valor,
-        data: Utils.getCurrentDate()
-      });
+        formaPagamento: formaPagamento,
+        categoria: categoria,
+        status: status,
+        observacoes: observacoes
+      };
 
-      Utils.showToast(`${tipo === 'entrada' ? 'Entrada' : 'Saída'} registrada com sucesso!`, 'success');
+      // Salvar
+      window.storage.addMovimentoCaixa(movimento);
+
+      const tipoTexto = tipo === 'entrada' ? 'Entrada' : 'Saída';
+      Utils.showToast(`${tipoTexto} registrada com sucesso!`, 'success');
+
+      this.fecharModal();
       this.render();
-      
+
       // Atualizar dashboard
       if (window.Dashboard) window.Dashboard.render();
     }

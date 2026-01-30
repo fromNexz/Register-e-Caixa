@@ -165,20 +165,84 @@
 
             <!-- VIEW: CAIXA -->
             <section id="view-caixa" class="view">
-                <div class="header">
-                    <div class="header-title">
-                        <h2>Fluxo de Caixa</h2>
-                        <p>Entradas e saídas</p>
-                    </div>
-                    <div class="header-actions">
-                        <button class="btn btn-success" id="btn-entrada">
-                            <i class="fas fa-arrow-down"></i> Entrada
-                        </button>
-                        <button class="btn btn-danger" id="btn-saida">
-                            <i class="fas fa-arrow-up"></i> Saída
-                        </button>
+                <!-- Botão de Filtros -->
+                <div style="margin-bottom: 1.5rem; position: relative; display: inline-block;">
+                    <button class="btn btn-outline" id="btn-toggle-filtros" style="padding: 0.7rem 1.5rem;">
+                        <i class="fas fa-filter"></i> Filtros
+                    </button>
+
+                    <!-- Container de Filtros (Dropdown Menu - Oculto por padrão) -->
+                    <div id="filtros-container" class="filtros-container-dropdown" style="display: none;">
+                        <div class="filtros-busca">
+                            <input type="text" id="caixa-busca" class="input-control"
+                                placeholder="🔍 Pesquisar por descrição...">
+                        </div>
+
+                        <div class="filtros-opcoes">
+                            <div class="filtro-item">
+                                <label>Tipo:</label>
+                                <select id="filtro-tipo" class="input-control">
+                                    <option value="">Todos</option>
+                                    <option value="entrada">Entradas</option>
+                                    <option value="saida">Saídas</option>
+                                </select>
+                            </div>
+
+                            <div class="filtro-item">
+                                <label>Categoria:</label>
+                                <select id="filtro-categoria" class="input-control">
+                                    <option value="">Todas</option>
+                                    <option value="venda_os">Venda de OS</option>
+                                    <option value="venda_pecas">Venda de Peças</option>
+                                    <option value="servico">Serviço Adicional</option>
+                                    <option value="devolucao">Devolução</option>
+                                    <option value="outros">Outros</option>
+                                    <option value="fornecedor">Fornecedor</option>
+                                    <option value="funcionarios">Funcionários</option>
+                                    <option value="aluguel">Aluguel</option>
+                                    <option value="utilidades">Utilidades</option>
+                                </select>
+                            </div>
+
+                            <div class="filtro-item">
+                                <label>Status:</label>
+                                <select id="filtro-status" class="input-control">
+                                    <option value="">Todos</option>
+                                    <option value="confirmado">Confirmado</option>
+                                    <option value="pendente">Pendente</option>
+                                    <option value="cancelado">Cancelado</option>
+                                </select>
+                            </div>
+
+                            <div class="filtro-item">
+                                <label>Forma de Pagamento:</label>
+                                <select id="filtro-forma-pagamento" class="input-control">
+                                    <option value="">Todas</option>
+                                    <option value="dinheiro">Dinheiro</option>
+                                    <option value="pix">PIX</option>
+                                    <option value="debito">Cartão de Débito</option>
+                                    <option value="credito">Cartão de Crédito</option>
+                                    <option value="boleto">Boleto</option>
+                                    <option value="cheque">Cheque</option>
+                                </select>
+                            </div>
+
+                            <div class="filtro-item">
+                                <label>Período:</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="date" id="filtro-data-inicio" class="input-control" style="flex: 1;">
+                                    <input type="date" id="filtro-data-fim" class="input-control" style="flex: 1;">
+                                </div>
+                            </div>
+
+                            <button class="btn btn-outline" id="btn-limpar-filtros"
+                                style="padding: 0.6rem 1.2rem; font-size: 0.85rem;">
+                                <i class="fas fa-redo"></i> Limpar
+                            </button>
+                        </div>
                     </div>
                 </div>
+
                 <div class="dashboard-grid">
                     <div class="stat-card">
                         <div class="stat-info">
@@ -816,6 +880,91 @@
         </div>
     </div>
 
+    <!-- MODAL ENTRADA/SAÍDA CAIXA -->
+    <div id="modal-caixa" class="modal">
+        <div class="modal__backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-caixa-titulo"><i class="fas fa-arrow-down"></i> Nova Entrada</h3>
+                <button type="button" class="btn btn-outline" style="padding: 0.5rem 1rem;"
+                    id="btn-fechar-modal-caixa">×</button>
+            </div>
+            <form id="form-caixa">
+                <div class="modal-body">
+                    <input type="hidden" id="caixa-tipo">
+
+                    <div class="input-group">
+                        <label>Descrição *</label>
+                        <input type="text" id="caixa-descricao" class="input-control"
+                            placeholder="Ex: Pagamento OS #001, Venda de peça..." required>
+                    </div>
+
+                    <div class="os-form-grid">
+                        <div class="input-group">
+                            <label>Data *</label>
+                            <input type="date" id="caixa-data" class="input-control" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Valor (R$) *</label>
+                            <input type="number" id="caixa-valor" class="input-control" placeholder="0.00" step="0.01"
+                                min="0" required>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Forma de Pagamento</label>
+                        <select id="caixa-forma-pagamento" class="input-control">
+                            <option value="">Selecione</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="pix">PIX</option>
+                            <option value="debito">Cartão de Débito</option>
+                            <option value="credito">Cartão de Crédito</option>
+                            <option value="boleto">Boleto</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Categoria</label>
+                        <select id="caixa-categoria" class="input-control">
+                            <option value="">Selecione</option>
+                            <option value="venda_os">Venda de OS</option>
+                            <option value="venda_pecas">Venda de Peças</option>
+                            <option value="servico">Serviço Adicional</option>
+                            <option value="devolucao">Devolução</option>
+                            <option value="outros">Outros</option>
+                            <option value="fornecedor">Fornecedor</option>
+                            <option value="funcionarios">Funcionários</option>
+                            <option value="aluguel">Aluguel</option>
+                            <option value="utilidades">Utilidades</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Status</label>
+                        <select id="caixa-status" class="input-control">
+                            <option value="confirmado" selected>Confirmado</option>
+                            <option value="pendente">Pendente</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Observações</label>
+                        <textarea id="caixa-observacoes" class="input-control" rows="3"
+                            placeholder="Notas adicionais..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" id="btn-cancelar-caixa">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
     <!-- Toast Container -->

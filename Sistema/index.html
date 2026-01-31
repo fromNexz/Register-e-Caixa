@@ -286,14 +286,14 @@
                 </div>
             </section>
 
-            <section data-view="relatorios" class="view-section">
-                <div class="section-header">
-                    <div>
+            <section id="view-relatorios" class="view">
+                <div class="header">
+                    <div class="header-title">
                         <h2>Relatórios e Exportação</h2>
                         <p>Gestão financeira e exportação de dados</p>
                     </div>
                     <div class="header-actions">
-                        <button class="btn btn-secondary" onclick="Relatorios.exportarExcel()">
+                        <button class="btn btn-outline" onclick="Relatorios.exportarExcel()">
                             <i class="fas fa-file-excel"></i> Excel
                         </button>
                         <button class="btn btn-primary" onclick="Relatorios.exportarPDF()">
@@ -302,21 +302,29 @@
                     </div>
                 </div>
 
-                <div class="grid-caixa" style="margin-top: 20px;">
-                    <div class="card">
-                        <h3>Fluxo de Caixa (Entradas vs Saídas)</h3>
+                <div class="dashboard-grid" style="margin-top: 2rem;">
+                    <div class="table-card">
+                        <div class="chart-header">
+                            <h3>Fluxo de Caixa (Entradas vs Saídas)</h3>
+                        </div>
                         <div style="height: 300px; position: relative;">
+                            <!-- CORREÇÃO AQUI: Certifique-se de que começa com anvas -->
                             anvas id="chartReceita"></canvas>
                         </div>
                     </div>
-                    <div class="card">
-                        <h3>Status das O.S</h3>
+                    <div class="table-card">
+                        <div class="chart-header">
+                            <h3>Status das O.S</h3>
+                        </div>
                         <div style="height: 300px; position: relative;">
+                            <!-- CORREÇÃO AQUI: Certifique-se de que começa com anvas -->
                             anvas id="chartStatus"></canvas>
                         </div>
                     </div>
                 </div>
             </section>
+
+
 
 
 

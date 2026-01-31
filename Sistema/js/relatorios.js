@@ -6,15 +6,16 @@ window.Relatorios = {
     chartStatus: null,
 
     init() {
-        console.log("Relatórios inicializado com sucesso");
+        console.log("Relatórios inicializado");
         this.updateDashboardCards();
         this.renderCharts();
     },
 
     updateDashboardCards() {
-        const transacoes = Storage.get('caixa') || [];
-        const ordens = Storage.get('os') || [];
-        const clientes = Storage.get('clientes') || [];
+        // Usando as funções corretas do seu storage.js
+        const transacoes = window.storage.getMovimentosCaixa() || [];
+        const ordens = window.storage.getOS() || [];
+        const clientes = window.storage.getClientes() || [];
 
         const hoje = new Date();
         const mes = hoje.getMonth();
@@ -27,39 +28,39 @@ window.Relatorios = {
             })
             .reduce((acc, t) => acc + parseFloat(t.valor || 0), 0);
 
-        const cards = document.querySelectorAll('.card-value');
-        if (cards.length >= 4) {
-            cards[0].textContent = Utils.formatCurrency(receita);
-            cards[1].textContent = ordens.filter(o => o.status === 'concluido').length;
-            cards[2].textContent = clientes.length;
-            cards[3].textContent = ordens.filter(o => o.status === 'pendente').length;
-        }
+        // Atualizando os IDs do seu Dashboard
+        const elReceita = document.getElementById('dash-receita');
+        if (elReceita) elReceita.textContent = Utils.formatCurrency(receita);
+        
+        const elOsConcluidas = document.getElementById('dash-os-concluidas');
+        if (elOsConcluidas) elOsConcluidas.textContent = ordens.filter(o => o.status === 'concluido').length;
+        
+        const elClientes = document.getElementById('dash-novos-clientes');
+        if (elClientes) elClientes.textContent = clientes.length;
+        
+        const elOsPendentes = document.getElementById('dash-os-pendentes');
+        if (elOsPendentes) elOsPendentes.textContent = ordens.filter(o => o.status === 'pendente' || o.status === 'em_andamento').length;
     },
 
     renderCharts() {
         const resCtx = document.getElementById('chartReceita');
         const staCtx = document.getElementById('chartStatus');
-        
         if (!resCtx || !staCtx) return;
 
         if (this.chartReceita) this.chartReceita.destroy();
         if (this.chartStatus) this.chartStatus.destroy();
 
-        const caixa = Storage.get('caixa') || [];
-        const os = Storage.get('os') || [];
+        const caixa = window.storage.getMovimentosCaixa() || [];
+        const os = window.storage.getOS() || [];
 
         this.chartReceita = new Chart(resCtx, {
             type: 'bar',
             data: {
-                labels: ['Entradas', 'Saídas'],
-                datasets: [{
-                    label: 'Fluxo (R$)',
-                    data: [
-                        caixa.filter(t => t.tipo === 'entrada').reduce((a, b) => a + parseFloat(b.valor || 0), 0),
-                        caixa.filter(t => t.tipo === 'saida').reduce((a, b) => a + parseFloat(b.valor || 0), 0)
-                    ],
-                    backgroundColor: ['#2ecc71', '#e74c3c']
-                }]
+                labels: ['Geral'],
+                datasets: [
+                    { label: 'Entradas', data: [caixa.filter(t => t.tipo === 'entrada').reduce((a, b) => a + parseFloat(b.valor || 0), 0)], backgroundColor: '#2ecc71' },
+                    { label: 'Saídas', data: [caixa.filter(t => t.tipo === 'saida').reduce((a, b) => a + parseFloat(b.valor || 0), 0)], backgroundColor: '#e74c3c' }
+                ]
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
@@ -69,10 +70,7 @@ window.Relatorios = {
             data: {
                 labels: ['Pendente', 'Concluído'],
                 datasets: [{
-                    data: [
-                        os.filter(o => o.status === 'pendente').length,
-                        os.filter(o => o.status === 'concluido').length
-                    ],
+                    data: [os.filter(o => o.status === 'pendente').length, os.filter(o => o.status === 'concluido').length],
                     backgroundColor: ['#f1c40f', '#2ecc71']
                 }]
             },
@@ -82,7 +80,7 @@ window.Relatorios = {
 
     exportarExcel() {
         if (typeof XLSX === 'undefined') return alert('Biblioteca Excel não carregada');
-        const dados = Storage.get('caixa') || [];
+        const dados = window.storage.getMovimentosCaixa() || [];
         const ws = XLSX.utils.json_to_sheet(dados);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Caixa");
@@ -94,7 +92,7 @@ window.Relatorios = {
         if (!jsPDF) return alert('Biblioteca PDF não carregada');
         const doc = new jsPDF();
         doc.text("Relatório de Caixa", 10, 10);
-        const dados = (Storage.get('caixa') || []).map(t => [t.data, t.descricao, t.valor]);
+        const dados = (window.storage.getMovimentosCaixa() || []).map(t => [t.data, t.descricao, t.valor]);
         doc.autoTable({ head: [['Data', 'Descrição', 'Valor']], body: dados });
         doc.save("Relatorio_Oficina.pdf");
     }

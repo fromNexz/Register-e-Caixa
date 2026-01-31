@@ -8,7 +8,7 @@ class Router {
   init() {
     // Configurar listeners dos botões de navegação
     const navLinks = document.querySelectorAll('.nav-link');
-    
+
     navLinks.forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -24,7 +24,7 @@ class Router {
 
   navigateTo(viewName) {
     console.log(`🔄 Navegando para: ${viewName}`);
-    
+
     // Remover active de todas as views e nav-links
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
@@ -39,7 +39,7 @@ class Router {
     } else {
       console.error(`❌ View ${viewName} não encontrada`);
     }
-    
+
     if (navLink) {
       navLink.classList.add('active');
     }
@@ -51,10 +51,10 @@ class Router {
   }
 
   onViewChange(viewName) {
-    // Chamar função específica de cada módulo quando a view é ativada
     switch (viewName) {
       case 'dashboard':
         if (window.Dashboard) window.Dashboard.render();
+        if (window.Relatorios) window.Relatorios.updateDashboardCards(); 
         break;
       case 'clientes':
         if (window.Clientes) window.Clientes.render();
@@ -65,8 +65,12 @@ class Router {
       case 'caixa':
         if (window.Caixa) window.Caixa.render();
         break;
+      case 'relatorios': // ADICIONE ISSO
+        if (window.Relatorios) window.Relatorios.init();
+        break;
     }
   }
+
 }
 
 // Inicializar router quando o DOM estiver pronto

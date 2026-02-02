@@ -1,113 +1,140 @@
-// js/storage.js
+// js/storage.js - Versão IndexedDB com Dexie
+
+// Inicializar banco de dados IndexedDB
+const db = new Dexie('OficinaManagerDB');
+
+// Definir schema (version 1)
+db.version(1).stores({
+  clientes: '++id, idSequencial, nome, cpf, telefone, dataCriacao',
+  ordensServico: '++id, numero, clienteId, status, dataAbertura, dataCriacao',
+  movimentosCaixa: '++id, tipo, osId, clienteId, data, dataCriacao'
+});
+
 class StorageManager {
   constructor() {
     this.keys = APP_CONFIG.storage.keys;
     this.init();
   }
 
-  init() {
-    this.clientes = this.load(this.keys.CLIENTES) || [];
-    this.ordensServico = this.load(this.keys.OS) || [];
-    this.movimentosCaixa = this.load(this.keys.CAIXA) || [];
-    console.log('📦 Storage inicializado:', {
-      clientes: this.clientes.length,
-      os: this.ordensServico.length,
-      caixa: this.movimentosCaixa.length
-    });
-  }
-
-  load(key) {
+  async init() {
     try {
-      const data = localStorage.getItem(key);
-      return data ? JSON.parse(data) : null;
+      // Verificar se precisa migrar dados do localStorage
+      await this.migrarDoLocalStorage();
+      
+      const clientes = await db.clientes.count();
+      const os = await db.ordensServico.count();
+      const caixa = await db.movimentosCaixa.count();
+      
+      console.log('📦 Storage IndexedDB inicializado:', {
+        clientes,
+        os,
+        caixa
+      });
     } catch (error) {
-      console.error(`❌ Erro ao carregar ${key}:`, error);
-      return null;
+      console.error('❌ Erro ao inicializar IndexedDB:', error);
     }
   }
 
-  save(key, data) {
-    try {
-      localStorage.setItem(key, JSON.stringify(data));
-      return true;
-    } catch (error) {
-      console.error(`❌ Erro ao salvar ${key}:`, error);
-      return false;
-    }
-  }
+  async migrarDoLocalStorage() {
+    // Verifica se já existe dados no IndexedDB
+    const count = await db.clientes.count();
+    if (count > 0) return; // Já migrado
 
-  saveAll() {
-    this.save(this.keys.CLIENTES, this.clientes);
-    this.save(this.keys.OS, this.ordensServico);
-    this.save(this.keys.CAIXA, this.movimentosCaixa);
+    // Tentar migrar dados antigos do localStorage
+    try {
+      const clientesAntigos = JSON.parse(localStorage.getItem(this.keys.CLIENTES) || '[]');
+      const osAntigas = JSON.parse(localStorage.getItem(this.keys.OS) || '[]');
+      const caixaAntigo = JSON.parse(localStorage.getItem(this.keys.CAIXA) || '[]');
+
+      if (clientesAntigos.length > 0 || osAntigas.length > 0 || caixaAntigo.length > 0) {
+        console.log('🔄 Migrando dados do localStorage para IndexedDB...');
+        
+        if (clientesAntigos.length > 0) {
+          await db.clientes.bulkAdd(clientesAntigos);
+        }
+        if (osAntigas.length > 0) {
+          await db.ordensServico.bulkAdd(osAntigas);
+        }
+        if (caixaAntigo.length > 0) {
+          await db.movimentosCaixa.bulkAdd(caixaAntigo);
+        }
+
+        console.log('✅ Migração concluída!');
+        
+        // Opcional: limpar localStorage antigo
+        // localStorage.removeItem(this.keys.CLIENTES);
+        // localStorage.removeItem(this.keys.OS);
+        // localStorage.removeItem(this.keys.CAIXA);
+      }
+    } catch (error) {
+      console.log('ℹ️ Nenhum dado antigo para migrar');
+    }
   }
 
   // ==========================================
   // === CLIENTES ===
   // ==========================================
   
-  getClientes() {
-    return this.clientes;
+  async getClientes() {
+    return await db.clientes.toArray();
   }
 
-  getClienteById(id) {
-    return this.clientes.find(c => c.id === id);
+  async getClienteById(id) {
+    return await db.clientes.get(id);
   }
 
-  addCliente(cliente) {
+  async addCliente(cliente) {
     cliente.id = this.generateId();
-    cliente.idSequencial = this.generateSequentialId('cliente');
+    cliente.idSequencial = await this.generateSequentialId('cliente');
     cliente.dataCriacao = new Date().toISOString();
-    this.clientes.push(cliente);
-    this.saveAll();
+    
+    await db.clientes.add(cliente);
     return cliente;
   }
 
-  updateCliente(id, clienteData) {
-    const index = this.clientes.findIndex(c => c.id === id);
-    if (index !== -1) {
-      this.clientes[index] = { ...this.clientes[index], ...clienteData };
-      this.saveAll();
-      return this.clientes[index];
+  async updateCliente(id, clienteData) {
+    const cliente = await db.clientes.get(id);
+    if (cliente) {
+      const clienteAtualizado = { ...cliente, ...clienteData };
+      await db.clientes.put(clienteAtualizado);
+      return clienteAtualizado;
     }
     return null;
   }
 
-  deleteCliente(id) {
-    this.clientes = this.clientes.filter(c => c.id !== id);
-    this.saveAll();
+  async deleteCliente(id) {
+    await db.clientes.delete(id);
   }
 
   // ==========================================
   // === ORDENS DE SERVIÇO ===
   // ==========================================
   
-  getOS() {
-    return this.ordensServico;
+  async getOS() {
+    return await db.ordensServico.toArray();
   }
 
-  getOSById(id) {
-    return this.ordensServico.find(os => os.id === id);
+  async getOSById(id) {
+    return await db.ordensServico.get(id);
   }
 
-  getOSByCliente(clienteId) {
-    return this.ordensServico.filter(os => os.clienteId === clienteId);
+  async getOSByCliente(clienteId) {
+    return await db.ordensServico.where('clienteId').equals(clienteId).toArray();
   }
 
-  addOS(osData) {
+  async addOS(osData) {
     const os = {
       ...osData,
       id: this.generateId(),
-      numero: this.getNextOSNumber(),
+      numero: await this.getNextOSNumber(),
       dataCriacao: new Date().toISOString()
     };
     
-    this.ordensServico.push(os);
-    this.saveAll();
+    await db.ordensServico.add(os);
     
     // Adicionar entrada no caixa se houver pagamento
     if (os.valorPago > 0) {
-      this.addMovimentoCaixa({
+      await this.addMovimentoCaixa({
         tipo: 'entrada',
         descricao: `Pagamento OS #${os.numero} - ${os.veiculoModelo}`,
         valor: os.valorPago,
@@ -120,23 +147,21 @@ class StorageManager {
     return os;
   }
 
-  updateOS(id, osData) {
-    const index = this.ordensServico.findIndex(os => os.id === id);
-    if (index !== -1) {
-      const osAntiga = this.ordensServico[index];
+  async updateOS(id, osData) {
+    const osAntiga = await db.ordensServico.get(id);
+    
+    if (osAntiga) {
       const valorPagoAntigo = osAntiga.valorPago || 0;
       const valorPagoNovo = osData.valorPago || 0;
       
       // Atualizar OS
-      this.ordensServico[index] = { 
-        ...osAntiga, 
-        ...osData 
-      };
+      const osAtualizada = { ...osAntiga, ...osData };
+      await db.ordensServico.put(osAtualizada);
       
       // Se houve mudança no valor pago, registrar no caixa
       if (valorPagoNovo > valorPagoAntigo) {
         const diferenca = valorPagoNovo - valorPagoAntigo;
-        this.addMovimentoCaixa({
+        await this.addMovimentoCaixa({
           tipo: 'entrada',
           descricao: `Pagamento adicional OS #${osAntiga.numero} - ${osData.veiculoModelo || osAntiga.veiculoModelo}`,
           valor: diferenca,
@@ -146,22 +171,21 @@ class StorageManager {
         });
       }
       
-      this.saveAll();
-      return this.ordensServico[index];
+      return osAtualizada;
     }
     return null;
   }
 
-  deleteOS(id) {
-    this.ordensServico = this.ordensServico.filter(os => os.id !== id);
+  async deleteOS(id) {
+    await db.ordensServico.delete(id);
     // Remover também movimentações relacionadas
-    this.movimentosCaixa = this.movimentosCaixa.filter(m => m.osId !== id);
-    this.saveAll();
+    await db.movimentosCaixa.where('osId').equals(id).delete();
   }
 
-  getNextOSNumber() {
-    if (this.ordensServico.length === 0) return 1;
-    const maxNumero = Math.max(...this.ordensServico.map(os => os.numero || 0));
+  async getNextOSNumber() {
+    const todasOS = await db.ordensServico.toArray();
+    if (todasOS.length === 0) return 1;
+    const maxNumero = Math.max(...todasOS.map(os => os.numero || 0));
     return maxNumero + 1;
   }
 
@@ -169,28 +193,27 @@ class StorageManager {
   // === CAIXA ===
   // ==========================================
   
-  getMovimentosCaixa() {
-    return this.movimentosCaixa;
+  async getMovimentosCaixa() {
+    return await db.movimentosCaixa.toArray();
   }
 
-  addMovimentoCaixa(movimento) {
+  async addMovimentoCaixa(movimento) {
     movimento.id = this.generateId();
     movimento.dataCriacao = new Date().toISOString();
-    this.movimentosCaixa.push(movimento);
-    this.saveAll();
+    await db.movimentosCaixa.add(movimento);
     return movimento;
   }
 
-  deleteMovimentoCaixa(id) {
-    this.movimentosCaixa = this.movimentosCaixa.filter(m => m.id !== id);
-    this.saveAll();
+  async deleteMovimentoCaixa(id) {
+    await db.movimentosCaixa.delete(id);
   }
 
-  getSaldoCaixa() {
+  async getSaldoCaixa() {
+    const movimentos = await db.movimentosCaixa.toArray();
     let entradas = 0;
     let saidas = 0;
     
-    this.movimentosCaixa.forEach(m => {
+    movimentos.forEach(m => {
       if (m.tipo === 'entrada') {
         entradas += m.valor || 0;
       } else {
@@ -209,25 +232,29 @@ class StorageManager {
   // === ESTATÍSTICAS ===
   // ==========================================
   
-  getEstatisticas() {
+  async getEstatisticas() {
     const hoje = new Date();
     const mesAtual = hoje.getMonth();
     const anoAtual = hoje.getFullYear();
 
+    const todasOS = await db.ordensServico.toArray();
+    const todosClientes = await db.clientes.toArray();
+    const movimentos = await db.movimentosCaixa.toArray();
+
     // OS do mês
-    const osDoMes = this.ordensServico.filter(os => {
+    const osDoMes = todasOS.filter(os => {
       if (!os.dataAbertura) return false;
       const dataOS = new Date(os.dataAbertura);
       return dataOS.getMonth() === mesAtual && dataOS.getFullYear() === anoAtual;
     });
 
     const osConcluidas = osDoMes.filter(os => os.status === 'concluido').length;
-    const osPendentes = this.ordensServico.filter(os => 
+    const osPendentes = todasOS.filter(os => 
       os.status !== 'concluido' && os.status !== 'cancelado'
     ).length;
 
     // Receita do mês
-    const receitaMes = this.movimentosCaixa
+    const receitaMes = movimentos
       .filter(m => {
         if (m.tipo !== 'entrada' || !m.data) return false;
         const dataMovimento = new Date(m.data);
@@ -236,7 +263,7 @@ class StorageManager {
       .reduce((acc, m) => acc + (m.valor || 0), 0);
 
     // Novos clientes do mês
-    const novosClientes = this.clientes.filter(c => {
+    const novosClientes = todosClientes.filter(c => {
       if (!c.dataCriacao) return false;
       const dataCriacao = new Date(c.dataCriacao);
       return dataCriacao.getMonth() === mesAtual && dataCriacao.getFullYear() === anoAtual;
@@ -247,8 +274,8 @@ class StorageManager {
       osConcluidas,
       novosClientes,
       osPendentes,
-      totalClientes: this.clientes.length,
-      totalOS: this.ordensServico.length
+      totalClientes: todosClientes.length,
+      totalOS: todasOS.length
     };
   }
 
@@ -260,9 +287,10 @@ class StorageManager {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  generateSequentialId(type) {
+  async generateSequentialId(type) {
     if (type === 'cliente') {
-      const nums = this.clientes
+      const clientes = await db.clientes.toArray();
+      const nums = clientes
         .map(c => {
           const match = c.idSequencial?.match(/\d+/);
           return match ? parseInt(match[0]) : 0;
@@ -279,11 +307,15 @@ class StorageManager {
   // === BACKUP E RESTAURAÇÃO ===
   // ==========================================
   
-  exportarDados() {
+  async exportarDados() {
+    const clientes = await db.clientes.toArray();
+    const ordensServico = await db.ordensServico.toArray();
+    const movimentosCaixa = await db.movimentosCaixa.toArray();
+    
     const dados = {
-      clientes: this.clientes,
-      ordensServico: this.ordensServico,
-      movimentosCaixa: this.movimentosCaixa,
+      clientes,
+      ordensServico,
+      movimentosCaixa,
       dataExportacao: new Date().toISOString(),
       versao: APP_CONFIG.version
     };
@@ -291,15 +323,23 @@ class StorageManager {
     return JSON.stringify(dados, null, 2);
   }
 
-  importarDados(jsonString) {
+  async importarDados(jsonString) {
     try {
       const dados = JSON.parse(jsonString);
       
-      if (dados.clientes) this.clientes = dados.clientes;
-      if (dados.ordensServico) this.ordensServico = dados.ordensServico;
-      if (dados.movimentosCaixa) this.movimentosCaixa = dados.movimentosCaixa;
+      if (dados.clientes) {
+        await db.clientes.clear();
+        await db.clientes.bulkAdd(dados.clientes);
+      }
+      if (dados.ordensServico) {
+        await db.ordensServico.clear();
+        await db.ordensServico.bulkAdd(dados.ordensServico);
+      }
+      if (dados.movimentosCaixa) {
+        await db.movimentosCaixa.clear();
+        await db.movimentosCaixa.bulkAdd(dados.movimentosCaixa);
+      }
       
-      this.saveAll();
       return true;
     } catch (error) {
       console.error('❌ Erro ao importar dados:', error);
@@ -307,13 +347,12 @@ class StorageManager {
     }
   }
 
-  limparTodosDados() {
+  async limparTodosDados() {
     if (confirm('⚠️ ATENÇÃO! Isso irá apagar TODOS os dados do sistema. Tem certeza?')) {
       if (confirm('Última confirmação: Todos os clientes, OS e movimentações serão perdidos!')) {
-        this.clientes = [];
-        this.ordensServico = [];
-        this.movimentosCaixa = [];
-        this.saveAll();
+        await db.clientes.clear();
+        await db.ordensServico.clear();
+        await db.movimentosCaixa.clear();
         console.log('🗑️ Todos os dados foram removidos');
         return true;
       }
@@ -322,6 +361,9 @@ class StorageManager {
   }
 }
 
-// Inicializar storage global
-window.storage = new StorageManager();
-console.log('✅ Storage Manager pronto');
+// Inicializar storage global de forma assíncrona
+(async () => {
+  window.storage = new StorageManager();
+  await window.storage.init();
+  console.log('✅ Storage Manager pronto (IndexedDB)');
+})();

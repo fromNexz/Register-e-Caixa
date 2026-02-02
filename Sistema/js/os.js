@@ -1,11 +1,16 @@
 // js/os.js
+//
+//    ATUALIZADO PARA RECEBER INDEXEDDB
+//             02/02/2026
+// @pedro
+
 if (window.OS) {
     console.warn('⚠️ OS já foi carregado, pulando redeclaração');
 } else {
     window.OS = {
-        // ... resto do código
+
     };
-    console.log('✅ Módulo OS carregado');
+    ('[+] Módulo OS carregado');
 }
 
 
@@ -62,10 +67,10 @@ const OS = {
         // === AUTO-PREENCHER DADOS DO CLIENTE ===
         const selectCliente = document.getElementById('os-cliente');
         if (selectCliente) {
-            selectCliente.addEventListener('change', () => {
+            selectCliente.addEventListener('change', async () => {
                 const clienteId = selectCliente.value;
                 if (clienteId) {
-                    const cliente = window.storage.getClienteById(clienteId);
+                    const cliente = await window.storage.getClienteById(clienteId);
                     if (cliente) {
                         if (cliente.veiculoModelo) {
                             document.getElementById('os-veiculo-modelo').value = cliente.veiculoModelo;
@@ -127,26 +132,26 @@ const OS = {
 
 
         this.initialized = true;
-        console.log('✅ Módulo OS inicializado');
+        ('[+] Módulo OS inicializado');
     },
 
 
-    render() {
+    async render() {
         this.init();
-        this.loadClientesSelect();
-        this.renderTabela();
+        await this.loadClientesSelect();
+        await this.renderTabela();
     },
 
-    loadClientesSelect() {
+    async loadClientesSelect() {
         const select = document.getElementById('os-cliente');
         if (!select) return;
 
-        const clientes = window.storage.getClientes();
+        const clientes = await window.storage.getClientes();
 
-        // Limpar opções (manter apenas a primeira)
+        
         select.innerHTML = '<option value="">Selecione um cliente</option>';
 
-        // Adicionar clientes
+        
         clientes.forEach(cliente => {
             const option = document.createElement('option');
             option.value = cliente.id;
@@ -155,12 +160,12 @@ const OS = {
         });
     },
 
-    renderTabela() {
+    async renderTabela() {
         const tbody = document.getElementById('os-tbody');
         if (!tbody) return;
 
-        const ordensServico = window.storage.getOS();
-        const clientes = window.storage.getClientes();
+        const ordensServico = await window.storage.getOS();
+        const clientes = await window.storage.getClientes();
 
         tbody.innerHTML = '';
 
@@ -175,7 +180,7 @@ const OS = {
             return;
         }
 
-        // Ordenar por número (mais recente primeiro)
+        
         ordensServico.sort((a, b) => (b.numero || 0) - (a.numero || 0));
 
         ordensServico.forEach(os => {
@@ -224,30 +229,30 @@ const OS = {
 
         // Event listeners dos botões
         tbody.querySelectorAll('.btn-detalhes').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
-                this.openDetalhes(id);
+                await this.openDetalhes(id);
             });
         });
 
         tbody.querySelectorAll('.btn-editar').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
-                const os = window.storage.getOSById(id);
+                const os = await window.storage.getOSById(id);
                 if (os) this.openModal(os);
             });
         });
     },
 
-    openModal(os = null) {
+    async openModal(os = null) {
         const modal = document.getElementById('modal-os');
         const titulo = document.getElementById('modal-os-titulo');
         const form = document.getElementById('form-os');
 
         if (!modal || !form) return;
 
-        // Carregar clientes no select
-        this.loadClientesSelect();
+        
+        await this.loadClientesSelect();
 
         if (os) {
             // Edição
@@ -379,16 +384,16 @@ const OS = {
         if (modal) modal.classList.remove('is-open');
     },
 
-    openDetalhes(osId) {
+    async openDetalhes(osId) {
         this.osAtualId = osId;
-        const os = window.storage.getOSById(osId);
+        const os = await window.storage.getOSById(osId);
 
         if (!os) {
             Utils.showToast('OS não encontrada', 'error');
             return;
         }
 
-        const cliente = window.storage.getClienteById(os.clienteId);
+        const cliente = await window.storage.getClienteById(os.clienteId);
 
         // Preencher informações básicas
         document.getElementById('detalhes-os-numero').textContent = `#${os.numero || '-'}`;
@@ -468,30 +473,29 @@ const OS = {
 
         // === ANEXAR EVENT LISTENERS APÓS MODAL ESTAR ABERTO ===
         setTimeout(() => {
-            // Botão Fechar (X)
+            
             const btnFechar = document.getElementById('btn-fechar-detalhes-os');
             if (btnFechar) {
                 btnFechar.onclick = () => {
-                    console.log('🔴 Botão X clicado');
+                    ('🔴 Botão X clicado');
                     this.closeDetalhes();
                 };
             }
 
-            // Backdrop (clicar fora)
+            // Backdrop clicar fora
             const modalDetalhes = document.getElementById('modal-detalhes-os');
             const backdrop = modalDetalhes?.querySelector('.modal__backdrop');
             if (backdrop) {
                 backdrop.onclick = () => {
-                    console.log('🔴 Backdrop clicado');
+                    ('🔴 Backdrop clicado');
                     this.closeDetalhes();
                 };
             }
 
-            // Botão Ver Cliente
             const btnVerCliente = document.getElementById('btn-ver-cliente-da-os');
             if (btnVerCliente) {
                 btnVerCliente.onclick = () => {
-                    console.log('🟢 Ver Cliente clicado');
+                    ('🟢 Ver Cliente clicado');
                     if (os.clienteId) {
                         this.closeDetalhes();
                         if (window.router) {
@@ -510,7 +514,7 @@ const OS = {
             const btnEditar = document.getElementById('btn-editar-os-detalhes');
             if (btnEditar) {
                 btnEditar.onclick = () => {
-                    console.log('🟢 Editar OS clicado');
+                    ('🟢 Editar OS clicado');
 
                     // Fechar modal de detalhes
                     const modalDetalhes = document.getElementById('modal-detalhes-os');
@@ -554,7 +558,7 @@ const OS = {
 
                         // Abrir modal
                         modal.classList.add('is-open');
-                        console.log('✅ Modal de edição aberto');
+                        ('✅ Modal de edição aberto');
 
                         // === ANEXAR LISTENERS DIRETAMENTE ===
                         setTimeout(() => {
@@ -563,7 +567,7 @@ const OS = {
                             if (btnCancelar) {
                                 btnCancelar.onclick = (e) => {
                                     e.preventDefault();
-                                    console.log('🔴 Cancelar (inline) clicado');
+                                    ('🔴 Cancelar (inline) clicado');
                                     modal.classList.remove('is-open');
                                 };
                             }
@@ -572,12 +576,12 @@ const OS = {
                             const backdrop = modal.querySelector('.modal__backdrop');
                             if (backdrop) {
                                 backdrop.onclick = () => {
-                                    console.log('🔴 Backdrop (inline) clicado');
+                                    ('🔴 Backdrop (inline) clicado');
                                     modal.classList.remove('is-open');
                                 };
                             }
 
-                            console.log('✅ Listeners inline anexados ao modal de edição');
+                            ('✅ Listeners inline anexados ao modal de edição');
                         }, 100);
                     }, 300);
                 };
@@ -587,12 +591,12 @@ const OS = {
             const btnImprimir = document.getElementById('btn-imprimir-os');
             if (btnImprimir) {
                 btnImprimir.onclick = () => {
-                    console.log('🟢 Imprimir clicado');
+                    ('🟢 Imprimir clicado');
                     Utils.showToast('Função de impressão em desenvolvimento...', 'info');
                 };
             }
 
-            console.log('✅ Event listeners dos botões anexados');
+            ('✅ Event listeners dos botões anexados');
         }, 100);
     },
 
@@ -689,7 +693,7 @@ const OS = {
     },
 
 
-    handleSubmit(e) {
+    async handleSubmit(e) {
         e.preventDefault();
 
         const id = document.getElementById('os-id').value;
@@ -735,7 +739,6 @@ const OS = {
                     const valorParcela = parseFloat((osData.valorTotal / tbody.children.length).toFixed(2));
                     const statusParcela = statusSelect ? statusSelect.value : 'pendente';
 
-                    // Somar ao valor pago se status for "pago" ou "entrada"
                     if (statusParcela === 'pago' || statusParcela === 'entrada') {
                         valorPagoTotal += valorParcela;
                     }
@@ -759,22 +762,22 @@ const OS = {
         // === SALVAR ===
         if (id) {
             // Atualizar
-            window.storage.updateOS(id, osData);
+            await window.storage.updateOS(id, osData);
             Utils.showToast('OS atualizada com sucesso!', 'success');
         } else {
             // Criar
-            window.storage.addOS(osData);
+            await window.storage.addOS(osData);
             Utils.showToast('OS criada com sucesso!', 'success');
         }
 
         this.closeModal();
-        this.render();
+        await this.render();
 
         // Atualizar dashboard
-        if (window.Dashboard) window.Dashboard.render();
+        if (window.Dashboard) await window.Dashboard.render();
     }
 
 };
 
 window.OS = OS;
-console.log('✅ Módulo OS carregado');
+('[+] Módulo OS carregado');

@@ -1,4 +1,9 @@
 // js/caixa.js
+//
+//   ATUALIZADO PARA RECEBER INDEXEDDB
+//            02/02/2026
+// @pedro
+
 if (window.Caixa) {
   console.warn('⚠️ Caixa já foi carregado, pulando redeclaração');
 } else {
@@ -7,18 +12,30 @@ if (window.Caixa) {
     tipoAtual: null,
 
     init() {
-       // === TOGGLE FILTROS ===
+      // === TOGGLE FILTROS ===
       const btnToggleFiltros = document.getElementById('btn-toggle-filtros');
       const filtrosContainer = document.getElementById('filtros-container');
 
       if (btnToggleFiltros && filtrosContainer) {
         btnToggleFiltros.addEventListener('click', () => {
-          const isOpen = filtrosContainer.style.display !== 'none';
-          filtrosContainer.style.display = isOpen ? 'none' : 'block';
-          btnToggleFiltros.classList.toggle('ativo');
+
+          const isVisible = filtrosContainer.style.display === 'block';
+
+          if (isVisible) {
+            filtrosContainer.style.display = 'none';
+            btnToggleFiltros.classList.remove('ativo');
+          } else {
+            filtrosContainer.style.display = 'block';
+            btnToggleFiltros.classList.add('ativo');
+          }
+        });
+      } else {
+        console.error('❌ Botão ou container de filtros NÃO encontrado!', {
+          btnToggleFiltros,
+          filtrosContainer
         });
       }
-      
+
       if (this.initialized) return;
 
       const btnEntrada = document.getElementById('btn-entrada');
@@ -31,27 +48,27 @@ if (window.Caixa) {
 
       // Event listeners
       if (btnEntrada) {
-        btnEntrada.addEventListener('click', () => this.abrirModal('entrada'));
+        btnEntrada.addEventListener('click', async () => await this.abrirModal('entrada'));
       }
 
       if (btnSaida) {
-        btnSaida.addEventListener('click', () => this.abrirModal('saida'));
+        btnSaida.addEventListener('click', async () => await this.abrirModal('saida'));
       }
 
       if (btnFechar) {
-        btnFechar.addEventListener('click', () => this.fecharModal());
+        btnFechar.addEventListener('click', async () => await this.fecharModal());
       }
 
       if (btnCancelar) {
-        btnCancelar.addEventListener('click', () => this.fecharModal());
+        btnCancelar.addEventListener('click', async () => await this.fecharModal());
       }
 
       if (backdrop) {
-        backdrop.addEventListener('click', () => this.fecharModal());
+        backdrop.addEventListener('click', async () => await this.fecharModal());
       }
 
       if (form) {
-        form.addEventListener('submit', (e) => this.handleSubmit(e));
+        form.addEventListener('submit', async (e) => await this.handleSubmit(e));
       }
 
       // === FILTROS ===
@@ -107,13 +124,13 @@ if (window.Caixa) {
       });
 
       this.initialized = true;
-      console.log('✅ Módulo Caixa inicializado');
+      ('[+] Módulo Caixa inicializado');
     },
 
-    render() {
+    async render() {
       this.init();
-      this.renderResumo();
-      this.renderTabela();
+      await this.renderResumo();
+      await this.renderTabela();
     },
 
     abrirModal(tipo) {
@@ -154,8 +171,8 @@ if (window.Caixa) {
       this.tipoAtual = null;
     },
 
-    renderResumo() {
-      const saldoInfo = window.storage.getSaldoCaixa();
+    async renderResumo() {
+      const saldoInfo = await window.storage.getSaldoCaixa();
 
       const elEntradas = document.getElementById('caixa-total-entradas');
       const elSaidas = document.getElementById('caixa-total-saidas');
@@ -176,11 +193,11 @@ if (window.Caixa) {
       }
     },
 
-    renderTabela() {
+    async renderTabela() {
       const tbody = document.getElementById('caixa-tbody');
       if (!tbody) return;
 
-      const movimentos = window.storage.getMovimentosCaixa();
+      const movimentos = await window.storage.getMovimentosCaixa();
 
       // === APLICAR FILTROS ===
       const busca = document.getElementById('caixa-busca')?.value.toLowerCase() || '';
@@ -192,22 +209,17 @@ if (window.Caixa) {
       const filtroDataFim = document.getElementById('filtro-data-fim')?.value || '';
 
       const movimentosFiltrados = movimentos.filter(m => {
-        // Busca por descrição
+
         if (busca && !m.descricao.toLowerCase().includes(busca)) return false;
 
-        // Filtro por tipo
         if (filtroTipo && m.tipo !== filtroTipo) return false;
 
-        // Filtro por categoria
         if (filtroCategoria && m.categoria !== filtroCategoria) return false;
 
-        // Filtro por status
         if (filtroStatus && m.status !== filtroStatus) return false;
 
-        // Filtro por forma de pagamento
         if (filtroFormaPagamento && m.formaPagamento !== filtroFormaPagamento) return false;
 
-        // Filtro por período
         if (filtroDataInicio && m.data < filtroDataInicio) return false;
         if (filtroDataFim && m.data > filtroDataFim) return false;
 
@@ -220,21 +232,21 @@ if (window.Caixa) {
         tbody.innerHTML = `
           <tr class="empty-row">
             <td colspan="4" style="text-align: center; padding: 2rem; color: #64748b; font-style: italic;">
-              ${busca || filtroTipo || filtroCategoria || filtroStatus || filtroFormaPagamento || filtroDataInicio || filtroDataFim 
-                ? 'Nenhuma movimentação encontrada com os filtros selecionados' 
-                : 'Nenhuma movimentação registrada'}
+              ${busca || filtroTipo || filtroCategoria || filtroStatus || filtroFormaPagamento || filtroDataInicio || filtroDataFim
+            ? 'Nenhuma movimentação encontrada com os filtros selecionados'
+            : 'Nenhuma movimentação registrada'}
             </td>
           </tr>
         `;
         return;
       }
 
-      // Ordenar por data (mais recente primeiro)
+
       movimentosFiltrados.sort((a, b) => new Date(b.data) - new Date(a.data));
 
       movimentosFiltrados.forEach(m => {
         const tr = document.createElement('tr');
-        
+
         tr.innerHTML = `
           <td>${Utils.formatDate(m.data)}</td>
           <td>
@@ -255,7 +267,7 @@ if (window.Caixa) {
         tbody.appendChild(tr);
       });
 
-      // Atualizar resumo dos filtrados
+
       this.atualizarResumoFiltrado(movimentosFiltrados);
     },
 
@@ -306,7 +318,7 @@ if (window.Caixa) {
       return categorias[categoria] || categoria;
     },
 
-    limparFiltros() {
+    async limparFiltros() {
       document.getElementById('caixa-busca').value = '';
       document.getElementById('filtro-tipo').value = '';
       document.getElementById('filtro-categoria').value = '';
@@ -314,12 +326,12 @@ if (window.Caixa) {
       document.getElementById('filtro-forma-pagamento').value = '';
       document.getElementById('filtro-data-inicio').value = '';
       document.getElementById('filtro-data-fim').value = '';
-      
+
       Utils.showToast('Filtros limpos!', 'info');
-      this.renderTabela();
+      await this.renderTabela();
     },
 
-    handleSubmit(e) {
+    async handleSubmit(e) {
       e.preventDefault();
 
       const tipo = document.getElementById('caixa-tipo').value;
@@ -355,18 +367,18 @@ if (window.Caixa) {
       };
 
       // Salvar
-      window.storage.addMovimentoCaixa(movimento);
+      await window.storage.addMovimentoCaixa(movimento);
 
       const tipoTexto = tipo === 'entrada' ? 'Entrada' : 'Saída';
       Utils.showToast(`${tipoTexto} registrada com sucesso!`, 'success');
 
       this.fecharModal();
-      this.render();
+      await this.render();
 
       // Atualizar dashboard
       if (window.Dashboard) window.Dashboard.render();
     }
   };
 
-  console.log('✅ Módulo Caixa carregado');
+  ('[+] Módulo Caixa carregado');
 }

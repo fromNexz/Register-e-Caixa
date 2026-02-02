@@ -50,23 +50,23 @@ class Router {
     this.onViewChange(viewName);
   }
 
-  onViewChange(viewName) {
+  async onViewChange(viewName) {
     switch (viewName) {
       case 'dashboard':
-        if (window.Dashboard) window.Dashboard.render();
-        if (window.Relatorios) window.Relatorios.updateDashboardCards(); 
+        if (window.Dashboard) await window.Dashboard.render();
+        if (window.Relatorios) await window.Relatorios.updateDashboardCards(); 
         break;
       case 'clientes':
-        if (window.Clientes) window.Clientes.render();
+        if (window.Clientes) await window.Clientes.render();
         break;
       case 'os':
-        if (window.OS) window.OS.render();
+        if (window.OS) await window.OS.render();
         break;
       case 'caixa':
-        if (window.Caixa) window.Caixa.render();
+        if (window.Caixa) await window.Caixa.render();
         break;
-      case 'relatorios': // ADICIONE ISSO
-        if (window.Relatorios) window.Relatorios.init();
+      case 'relatorios':
+        if (window.Relatorios) await window.Relatorios.init();
         break;
     }
   }

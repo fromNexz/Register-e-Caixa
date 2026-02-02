@@ -1,4 +1,9 @@
 // js/dashboard.js
+//
+//    ATUALIZADO PARA RECEBER INDEXEDDB
+//              02/02/2026
+//@pedro
+
 if (window.Dashboard) {
   console.warn('⚠️ Dashboard já foi carregado, pulando redeclaração');
 } else {
@@ -8,12 +13,12 @@ if (window.Dashboard) {
     init() {
       if (this.initialized) return;
       this.initialized = true;
-      console.log('✅ Módulo Dashboard inicializado');
+      ('[+] Módulo Dashboard inicializado');
     },
 
-    render() {
+    async render() {
       this.init();
-      this.updateStats();
+      await this.updateStats();
       this.updateDate();
     },
 
@@ -31,8 +36,8 @@ if (window.Dashboard) {
       }
     },
 
-    updateStats() {
-      const stats = window.storage.getEstatisticas();
+    async updateStats() {
+      const stats = await window.storage.getEstatisticas();
 
       // Atualizar DOM
       const elReceita = document.getElementById('dash-receita');
@@ -47,12 +52,12 @@ if (window.Dashboard) {
     }
   };
 
-  console.log('✅ Módulo Dashboard carregado');
+  ('[+] Módulo Dashboard carregado');
 
   // Renderizar dashboard na inicialização
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-      window.Dashboard.render();
+  document.addEventListener('DOMContentLoaded', async () => {
+    setTimeout(async() => {
+      await window.Dashboard.render();
     }, 100);
   });
 }

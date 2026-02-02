@@ -1,11 +1,17 @@
-// js/clientes.js
+// js/clientes.js 
+//
+// ATUALIZADO PARA INDEXEDDB 
+//        2/02/2026
+// @pedro
+
 if (window.Clientes) {
     console.warn('⚠️ Clientes já foi carregado, pulando redeclaração');
 } else {
     window.Clientes = {
-        // ... resto do código
+        initialized: false,
+        clienteAtualId: null,
     };
-    console.log('✅ Módulo Clientes carregado');
+    ('[+] Módulo Clientes carregado');
 }
 
 const Clientes = {
@@ -42,39 +48,39 @@ const Clientes = {
         const btnNovaOsDoDetalhe = document.getElementById('btn-nova-os-do-detalhe');
 
         if (btnEditarDoDetalhe) {
-            btnEditarDoDetalhe.addEventListener('click', () => {
-                const cliente = window.storage.getClienteById(this.clienteAtualId);
+            btnEditarDoDetalhe.addEventListener('click', async () => {
+                const cliente = await window.storage.getClienteById(this.clienteAtualId);
                 if (cliente) {
                     this.closeDetalhes();
-                    this.openModal(cliente);
+                    await this.openModal(cliente);
                 }
             });
         }
 
         if (btnNovaOsDoDetalhe) {
-            btnNovaOsDoDetalhe.addEventListener('click', () => {
-                console.log('🟢 Nova OS do detalhe clicado');
+            btnNovaOsDoDetalhe.addEventListener('click', async () => {
+                ('[=] Nova OS do detalhe clicado');
 
-                // Fechar modal de detalhes do cliente
+                
                 this.closeDetalhes();
 
-                // Navegar para a view de OS
+                
                 if (window.router) {
                     window.router.navigateTo('os');
                 }
 
-                // Abrir modal de Nova OS com dados pré-preenchidos
+                
                 setTimeout(() => {
                     if (window.OS && window.OS.openModal) {
-                        // Abrir modal limpo
+                        
                         window.OS.openModal();
 
-                        // Preencher dados do cliente
+                        
                         setTimeout(() => {
                             const selectCliente = document.getElementById('os-cliente');
                             if (selectCliente) {
                                 selectCliente.value = this.clienteAtualId;
-                                // Disparar evento change para preencher dados do veículo
+                                
                                 selectCliente.dispatchEvent(new Event('change'));
                             }
                         }, 100);
@@ -84,10 +90,10 @@ const Clientes = {
         }
 
         this.initialized = true;
-        console.log('✅ Módulo Clientes inicializado');
+        ('[+] Módulo Clientes inicializado');
     },
 
-    render() {
+    async render() {
         this.init();
 
         const tbody = document.getElementById('clientes-tbody');
@@ -95,7 +101,7 @@ const Clientes = {
 
         if (!tbody) return;
 
-        const clientes = window.storage.getClientes();
+        const clientes = await window.storage.getClientes();
 
         // Filtrar clientes
         const filteredClientes = clientes.filter(c => {
@@ -149,29 +155,29 @@ const Clientes = {
 
         // Adicionar event listeners aos botões de ação
         tbody.querySelectorAll('.btn-detalhes').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
-                this.openDetalhes(id);
+                await this.openDetalhes(id);
             });
         });
 
         tbody.querySelectorAll('.btn-editar').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
-                const cliente = window.storage.getClienteById(id);
+                const cliente = await window.storage.getClienteById(id);
                 if (cliente) this.openModal(cliente);
             });
         });
 
         tbody.querySelectorAll('.btn-danger').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
-                this.delete(id);
+                await this.delete(id);
             });
         });
     },
 
-    openModal(cliente = null) {
+    async openModal(cliente = null) {
         const modal = document.getElementById('modal-cliente');
         const titulo = document.getElementById('modal-cliente-titulo');
         const form = document.getElementById('form-cliente');
@@ -192,7 +198,6 @@ const Clientes = {
             document.getElementById('cliente-veiculo-placa').value = cliente.veiculoPlaca || '';
             document.getElementById('cliente-observacoes').value = cliente.observacoes || '';
         } else {
-            // Novo
             titulo.textContent = 'Novo Cliente';
             form.reset();
             document.getElementById('cliente-id').value = '';
@@ -206,9 +211,9 @@ const Clientes = {
         if (modal) modal.classList.remove('is-open');
     },
 
-    openDetalhes(clienteId) {
+    async openDetalhes(clienteId) {
         this.clienteAtualId = clienteId;
-        const cliente = window.storage.getClienteById(clienteId);
+        const cliente = await window.storage.getClienteById(clienteId);
 
         if (!cliente) {
             Utils.showToast('Cliente não encontrado', 'error');
@@ -243,7 +248,7 @@ const Clientes = {
         }
 
         // Renderizar histórico de OS
-        this.renderHistorico(clienteId);
+        await this.renderHistorico(clienteId);
 
         // Abrir modal
         const modal = document.getElementById('modal-detalhes-cliente');
@@ -256,12 +261,12 @@ const Clientes = {
         this.clienteAtualId = null;
     },
 
-    renderHistorico(clienteId) {
+    async renderHistorico(clienteId) {
         const tbody = document.getElementById('historico-tbody');
         if (!tbody) return;
 
         // Buscar OS do cliente
-        const todasOS = window.storage.getOS();
+        const todasOS = await window.storage.getOS();
         const osCliente = todasOS.filter(os => os.clienteId === clienteId);
 
         // Calcular estatísticas
@@ -359,7 +364,7 @@ const Clientes = {
     },
 
 
-    handleSubmit(e) {
+    async handleSubmit(e) {
         e.preventDefault();
 
         const id = document.getElementById('cliente-id').value;
@@ -377,24 +382,24 @@ const Clientes = {
 
         if (id) {
             // Atualizar
-            window.storage.updateCliente(id, clienteData);
+            await window.storage.updateCliente(id, clienteData);
             Utils.showToast('Cliente atualizado com sucesso!', 'success');
         } else {
             // Criar
-            window.storage.addCliente(clienteData);
+            await window.storage.addCliente(clienteData);
             Utils.showToast('Cliente cadastrado com sucesso!', 'success');
         }
 
         this.closeModal();
-        this.render();
+        await this.render();
     },
 
-    delete(id) {
-        const cliente = window.storage.getClienteById(id);
+    async delete(id) {
+        const cliente = await window.storage.getClienteById(id);
         if (!cliente) return;
 
         if (confirm(`Deseja realmente excluir o cliente "${cliente.nome}"?`)) {
-            window.storage.deleteCliente(id);
+            await window.storage.deleteCliente(id);
             Utils.showToast('Cliente excluído com sucesso!', 'info');
             this.render();
         }
@@ -402,4 +407,4 @@ const Clientes = {
 };
 
 window.Clientes = Clientes;
-console.log('✅ Módulo Clientes carregado');
+('✅ Módulo Clientes carregado');

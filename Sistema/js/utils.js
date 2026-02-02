@@ -77,4 +77,4 @@ const Utils = {
 };
 
 window.Utils = Utils;
-console.log('✅ Utils carregado');
+('✅ Utils carregado');

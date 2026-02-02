@@ -1,21 +1,24 @@
-/**
- * Módulo de Relatórios - Oficina Manager
- */
+// /js/relatorios.js
+//
+//       ATUALIZADO PARA RECEBER INDEXEDDB
+//                 02/02/2026 
+//@pedro
+
 window.Relatorios = {
     chartReceita: null,
     chartStatus: null,
 
-    init() {
-        console.log("Relatórios inicializado");
-        this.updateDashboardCards();
-        this.renderCharts();
+    async init() {
+        ("[+] Relatórios inicializado");
+        await  this.updateDashboardCards();
+        await this.renderCharts();
     },
 
-    updateDashboardCards() {
-        // Usando as funções corretas do seu storage.js
-        const transacoes = window.storage.getMovimentosCaixa() || [];
-        const ordens = window.storage.getOS() || [];
-        const clientes = window.storage.getClientes() || [];
+    async updateDashboardCards() {
+        // CORREÇÃO: Usando window.storage oficial
+        const transacoes = await window.storage.getMovimentosCaixa() || [];
+        const ordens = await window.storage.getOS() || [];
+        const clientes = await window.storage.getClientes() || [];
 
         const hoje = new Date();
         const mes = hoje.getMonth();
@@ -28,7 +31,7 @@ window.Relatorios = {
             })
             .reduce((acc, t) => acc + parseFloat(t.valor || 0), 0);
 
-        // Atualizando os IDs do seu Dashboard
+        // Atualiza os cards do dashboard principal
         const elReceita = document.getElementById('dash-receita');
         if (elReceita) elReceita.textContent = Utils.formatCurrency(receita);
         
@@ -42,7 +45,7 @@ window.Relatorios = {
         if (elOsPendentes) elOsPendentes.textContent = ordens.filter(o => o.status === 'pendente' || o.status === 'em_andamento').length;
     },
 
-    renderCharts() {
+    async renderCharts() {
         const resCtx = document.getElementById('chartReceita');
         const staCtx = document.getElementById('chartStatus');
         if (!resCtx || !staCtx) return;
@@ -50,8 +53,8 @@ window.Relatorios = {
         if (this.chartReceita) this.chartReceita.destroy();
         if (this.chartStatus) this.chartStatus.destroy();
 
-        const caixa = window.storage.getMovimentosCaixa() || [];
-        const os = window.storage.getOS() || [];
+        const caixa = await window.storage.getMovimentosCaixa() || [];
+        const os = await window.storage.getOS() || [];
 
         this.chartReceita = new Chart(resCtx, {
             type: 'bar',
@@ -78,21 +81,21 @@ window.Relatorios = {
         });
     },
 
-    exportarExcel() {
+    async exportarExcel() {
         if (typeof XLSX === 'undefined') return alert('Biblioteca Excel não carregada');
-        const dados = window.storage.getMovimentosCaixa() || [];
+        const dados = await window.storage.getMovimentosCaixa() || [];
         const ws = XLSX.utils.json_to_sheet(dados);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Caixa");
         XLSX.writeFile(wb, "Relatorio_Oficina.xlsx");
     },
 
-    exportarPDF() {
+    async exportarPDF() {
         const { jsPDF } = window.jspdf;
         if (!jsPDF) return alert('Biblioteca PDF não carregada');
         const doc = new jsPDF();
         doc.text("Relatório de Caixa", 10, 10);
-        const dados = (window.storage.getMovimentosCaixa() || []).map(t => [t.data, t.descricao, t.valor]);
+        const dados = (await window.storage.getMovimentosCaixa() || []).map(t => [t.data, t.descricao, t.valor]);
         doc.autoTable({ head: [['Data', 'Descrição', 'Valor']], body: dados });
         doc.save("Relatorio_Oficina.pdf");
     }

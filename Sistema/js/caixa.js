@@ -5,7 +5,7 @@
 // @pedro
 
 if (window.Caixa) {
-  console.warn('⚠️ Caixa já foi carregado, pulando redeclaração');
+  console.warn('[!] Caixa já foi carregado, pulando redeclaração');
 } else {
   window.Caixa = {
     initialized: false,
@@ -30,7 +30,7 @@ if (window.Caixa) {
           }
         });
       } else {
-        console.error('❌ Botão ou container de filtros NÃO encontrado!', {
+        console.error('[X] Botão ou container de filtros NÃO encontrado!', {
           btnToggleFiltros,
           filtrosContainer
         });
@@ -113,7 +113,7 @@ if (window.Caixa) {
         btnLimparFiltros.addEventListener('click', () => this.limparFiltros());
       }
 
-      // Fechar com ESC
+      
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           const modalElement = document.getElementById('modal-caixa');
@@ -142,13 +142,13 @@ if (window.Caixa) {
 
       if (!modal || !form) return;
 
-      // Limpar formulário
+      
       form.reset();
 
-      // Definir tipo
+     
       inputTipo.value = tipo;
 
-      // Atualizar título e icone
+      
       if (tipo === 'entrada') {
         titulo.innerHTML = '<i class="fas fa-arrow-down"></i> Nova Entrada';
         document.getElementById('caixa-categoria').value = 'venda_os';
@@ -157,11 +157,11 @@ if (window.Caixa) {
         document.getElementById('caixa-categoria').value = 'fornecedor';
       }
 
-      // Definir data padrão
+      
       document.getElementById('caixa-data').value = Utils.getCurrentDate();
       document.getElementById('caixa-status').value = 'confirmado';
 
-      // Abrir modal
+      
       modal.classList.add('is-open');
     },
 
@@ -182,7 +182,7 @@ if (window.Caixa) {
       if (elSaidas) elSaidas.textContent = Utils.formatCurrency(saldoInfo.saidas);
       if (elSaldo) {
         elSaldo.textContent = Utils.formatCurrency(saldoInfo.saldo);
-        // Colorir o saldo
+        
         if (saldoInfo.saldo > 0) {
           elSaldo.style.color = '#10b981';
         } else if (saldoInfo.saldo < 0) {

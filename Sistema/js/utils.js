@@ -77,4 +77,4 @@ const Utils = {
 };
 
 window.Utils = Utils;
-('✅ Utils carregado');
+('[+] Utils carregado');

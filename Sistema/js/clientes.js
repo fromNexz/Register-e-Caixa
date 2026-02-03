@@ -5,7 +5,7 @@
 // @pedro
 
 if (window.Clientes) {
-    console.warn('⚠️ Clientes já foi carregado, pulando redeclaração');
+    console.warn('[!] Clientes já foi carregado, pulando redeclaração');
 } else {
     window.Clientes = {
         initialized: false,

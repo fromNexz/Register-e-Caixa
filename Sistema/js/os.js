@@ -5,7 +5,7 @@
 // @pedro
 
 if (window.OS) {
-    console.warn('⚠️ OS já foi carregado, pulando redeclaração');
+    console.warn('[!] OS já foi carregado, pulando redeclaração');
 } else {
     window.OS = {
 
@@ -282,24 +282,24 @@ const OS = {
             const parcelasTableContainer = document.getElementById('parcelas-table-container');
 
             if (os.formaPagamento === 'parcelado' && os.parcelas && os.parcelas.length > 0) {
-                // Mostrar container de parcelamento
+                
                 if (parcelamentoContainer) {
                     parcelamentoContainer.style.display = 'block';
                 }
 
-                // Preencher número de parcelas
+                
                 const numParcelasSelect = document.getElementById('os-num-parcelas');
                 if (numParcelasSelect) {
                     numParcelasSelect.value = os.parcelas.length;
                 }
 
-                // Preencher data da primeira parcela
+                
                 const dataPrimeiraInput = document.getElementById('os-data-primeira-parcela');
                 if (dataPrimeiraInput && os.parcelas[0]) {
                     dataPrimeiraInput.value = os.parcelas[0].data;
                 }
 
-                // Renderizar parcelas na tabela
+                
                 const tbody = document.getElementById('parcelas-tbody');
                 if (tbody) {
                     tbody.innerHTML = '';
@@ -348,7 +348,7 @@ const OS = {
                     }
                 }
             } else {
-                // Ocultar parcelamento se não for parcelado
+                
                 if (parcelamentoContainer) {
                     parcelamentoContainer.style.display = 'none';
                 }
@@ -395,7 +395,7 @@ const OS = {
 
         const cliente = await window.storage.getClienteById(os.clienteId);
 
-        // Preencher informações básicas
+        
         document.getElementById('detalhes-os-numero').textContent = `#${os.numero || '-'}`;
 
         // Status
@@ -477,7 +477,6 @@ const OS = {
             const btnFechar = document.getElementById('btn-fechar-detalhes-os');
             if (btnFechar) {
                 btnFechar.onclick = () => {
-                    ('🔴 Botão X clicado');
                     this.closeDetalhes();
                 };
             }
@@ -487,7 +486,6 @@ const OS = {
             const backdrop = modalDetalhes?.querySelector('.modal__backdrop');
             if (backdrop) {
                 backdrop.onclick = () => {
-                    ('🔴 Backdrop clicado');
                     this.closeDetalhes();
                 };
             }
@@ -495,7 +493,6 @@ const OS = {
             const btnVerCliente = document.getElementById('btn-ver-cliente-da-os');
             if (btnVerCliente) {
                 btnVerCliente.onclick = () => {
-                    ('🟢 Ver Cliente clicado');
                     if (os.clienteId) {
                         this.closeDetalhes();
                         if (window.router) {
@@ -514,15 +511,14 @@ const OS = {
             const btnEditar = document.getElementById('btn-editar-os-detalhes');
             if (btnEditar) {
                 btnEditar.onclick = () => {
-                    ('🟢 Editar OS clicado');
 
-                    // Fechar modal de detalhes
+                    
                     const modalDetalhes = document.getElementById('modal-detalhes-os');
                     if (modalDetalhes) {
                         modalDetalhes.classList.remove('is-open');
                     }
 
-                    // Abrir modal de edição
+                    
                     setTimeout(() => {
                         const modal = document.getElementById('modal-os');
                         const titulo = document.getElementById('modal-os-titulo');
@@ -530,10 +526,10 @@ const OS = {
 
                         if (!modal || !form) return;
 
-                        // Carregar clientes no select
+                        
                         this.loadClientesSelect();
 
-                        // Preencher formulário com dados da OS
+                        
                         titulo.innerHTML = '<i class="fas fa-file-invoice"></i> Editar Ordem de Serviço';
                         document.getElementById('os-id').value = os.id;
                         document.getElementById('os-cliente').value = os.clienteId || '';
@@ -558,7 +554,7 @@ const OS = {
 
                         // Abrir modal
                         modal.classList.add('is-open');
-                        ('✅ Modal de edição aberto');
+                        ('[+] Modal de edição aberto');
 
                         // === ANEXAR LISTENERS DIRETAMENTE ===
                         setTimeout(() => {
@@ -567,7 +563,6 @@ const OS = {
                             if (btnCancelar) {
                                 btnCancelar.onclick = (e) => {
                                     e.preventDefault();
-                                    ('🔴 Cancelar (inline) clicado');
                                     modal.classList.remove('is-open');
                                 };
                             }
@@ -576,12 +571,11 @@ const OS = {
                             const backdrop = modal.querySelector('.modal__backdrop');
                             if (backdrop) {
                                 backdrop.onclick = () => {
-                                    ('🔴 Backdrop (inline) clicado');
                                     modal.classList.remove('is-open');
                                 };
                             }
 
-                            ('✅ Listeners inline anexados ao modal de edição');
+                            ('[+] Listeners inline anexados ao modal de edição');
                         }, 100);
                     }, 300);
                 };
@@ -591,12 +585,11 @@ const OS = {
             const btnImprimir = document.getElementById('btn-imprimir-os');
             if (btnImprimir) {
                 btnImprimir.onclick = () => {
-                    ('🟢 Imprimir clicado');
                     Utils.showToast('Função de impressão em desenvolvimento...', 'info');
                 };
             }
 
-            ('✅ Event listeners dos botões anexados');
+            ('[+] Event listeners dos botões anexados');
         }, 100);
     },
 
@@ -638,16 +631,16 @@ const OS = {
             return;
         }
 
-        // Calcular valor de cada parcela
+        
         const valorParcela = (valorTotal / numParcelas).toFixed(2);
         const tbody = document.getElementById('parcelas-tbody');
         const container = document.getElementById('parcelas-table-container');
 
         tbody.innerHTML = '';
 
-        // Gerar linhas das parcelas
+        
         for (let i = 1; i <= numParcelas; i++) {
-            // Calcular data da parcela (somar meses)
+           
             const dataParcela = new Date(dataPrimeira);
             dataParcela.setMonth(dataParcela.getMonth() + (i - 1));
             const dataFormatada = dataParcela.toISOString().split('T')[0];

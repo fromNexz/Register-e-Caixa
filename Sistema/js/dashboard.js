@@ -5,7 +5,7 @@
 //@pedro
 
 if (window.Dashboard) {
-  console.warn('⚠️ Dashboard já foi carregado, pulando redeclaração');
+  console.warn('[!] Dashboard já foi carregado, pulando redeclaração');
 } else {
   window.Dashboard = {
     initialized: false,

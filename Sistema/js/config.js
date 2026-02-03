@@ -12,4 +12,4 @@ const APP_CONFIG = {
 };
 
 window.APP_CONFIG = APP_CONFIG;
-('✅ Config carregado');
+('[+] Config carregado');

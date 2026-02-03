@@ -6,7 +6,7 @@ class Router {
   }
 
   init() {
-    // Configurar listeners dos botões de navegação
+    
     const navLinks = document.querySelectorAll('.nav-link');
 
     navLinks.forEach(btn => {
@@ -19,25 +19,25 @@ class Router {
       });
     });
 
-    console.log('✅ Router inicializado');
+    console.log('[+] Router inicializado');
   }
 
   navigateTo(viewName) {
-    console.log(`🔄 Navegando para: ${viewName}`);
+    console.log(`[=] Navegando para: ${viewName}`);
 
-    // Remover active de todas as views e nav-links
+    
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
 
-    // Ativar view e nav-link corretos
+    
     const view = document.getElementById(`view-${viewName}`);
     const navLink = document.querySelector(`[data-view="${viewName}"]`);
 
     if (view) {
       view.classList.add('active');
-      console.log(`✅ View ${viewName} ativada`);
+      console.log(`[+] View ${viewName} ativada`);
     } else {
-      console.error(`❌ View ${viewName} não encontrada`);
+      console.error(`[-] View ${viewName} não encontrada`);
     }
 
     if (navLink) {
@@ -46,7 +46,6 @@ class Router {
 
     this.currentView = viewName;
 
-    // Chamar função de inicialização da view
     this.onViewChange(viewName);
   }
 
@@ -73,7 +72,7 @@ class Router {
 
 }
 
-// Inicializar router quando o DOM estiver pronto
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     window.router = new Router();
@@ -82,4 +81,4 @@ if (document.readyState === 'loading') {
   window.router = new Router();
 }
 
-console.log('✅ Router carregado');
+console.log('[+] Router carregado')

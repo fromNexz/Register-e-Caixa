@@ -3,7 +3,7 @@
 // Inicializar banco de dados IndexedDB
 const db = new Dexie('OficinaManagerDB');
 
-// Definir schema (version 1)
+// Definir schema
 db.version(1).stores({
   clientes: '++id, idSequencial, nome, cpf, telefone, dataCriacao',
   ordensServico: '++id, numero, clienteId, status, dataAbertura, dataCriacao',
@@ -25,7 +25,7 @@ class StorageManager {
       const os = await db.ordensServico.count();
       const caixa = await db.movimentosCaixa.count();
       
-      console.log('📦 Storage IndexedDB inicializado:', {
+      console.log('[+] Storage IndexedDB inicializado:', {
         clientes,
         os,
         caixa
@@ -36,18 +36,17 @@ class StorageManager {
   }
 
   async migrarDoLocalStorage() {
-    // Verifica se já existe dados no IndexedDB
+    
     const count = await db.clientes.count();
-    if (count > 0) return; // Já migrado
+    if (count > 0) return; 
 
-    // Tentar migrar dados antigos do localStorage
     try {
       const clientesAntigos = JSON.parse(localStorage.getItem(this.keys.CLIENTES) || '[]');
       const osAntigas = JSON.parse(localStorage.getItem(this.keys.OS) || '[]');
       const caixaAntigo = JSON.parse(localStorage.getItem(this.keys.CAIXA) || '[]');
 
       if (clientesAntigos.length > 0 || osAntigas.length > 0 || caixaAntigo.length > 0) {
-        console.log('🔄 Migrando dados do localStorage para IndexedDB...');
+        console.log('[=] Migrando dados do localStorage para IndexedDB...');
         
         if (clientesAntigos.length > 0) {
           await db.clientes.bulkAdd(clientesAntigos);
@@ -59,7 +58,7 @@ class StorageManager {
           await db.movimentosCaixa.bulkAdd(caixaAntigo);
         }
 
-        console.log('✅ Migração concluída!');
+        console.log('[+] Migração concluída!');
         
         // Opcional: limpar localStorage antigo
         // localStorage.removeItem(this.keys.CLIENTES);
@@ -67,7 +66,7 @@ class StorageManager {
         // localStorage.removeItem(this.keys.CAIXA);
       }
     } catch (error) {
-      console.log('ℹ️ Nenhum dado antigo para migrar');
+      console.log('[ℹ] Nenhum dado antigo para migrar');
     }
   }
 
@@ -132,7 +131,7 @@ class StorageManager {
     
     await db.ordensServico.add(os);
     
-    // Adicionar entrada no caixa se houver pagamento
+    
     if (os.valorPago > 0) {
       await this.addMovimentoCaixa({
         tipo: 'entrada',
@@ -154,11 +153,11 @@ class StorageManager {
       const valorPagoAntigo = osAntiga.valorPago || 0;
       const valorPagoNovo = osData.valorPago || 0;
       
-      // Atualizar OS
+      
       const osAtualizada = { ...osAntiga, ...osData };
       await db.ordensServico.put(osAtualizada);
       
-      // Se houve mudança no valor pago, registrar no caixa
+      
       if (valorPagoNovo > valorPagoAntigo) {
         const diferenca = valorPagoNovo - valorPagoAntigo;
         await this.addMovimentoCaixa({
@@ -178,7 +177,7 @@ class StorageManager {
 
   async deleteOS(id) {
     await db.ordensServico.delete(id);
-    // Remover também movimentações relacionadas
+    
     await db.movimentosCaixa.where('osId').equals(id).delete();
   }
 
@@ -342,18 +341,18 @@ class StorageManager {
       
       return true;
     } catch (error) {
-      console.error('❌ Erro ao importar dados:', error);
+      console.error('[X] Erro ao importar dados:', error);
       return false;
     }
   }
 
   async limparTodosDados() {
-    if (confirm('⚠️ ATENÇÃO! Isso irá apagar TODOS os dados do sistema. Tem certeza?')) {
+    if (confirm('[!] ATENÇÃO! Isso irá apagar TODOS os dados do sistema. Tem certeza?')) {
       if (confirm('Última confirmação: Todos os clientes, OS e movimentações serão perdidos!')) {
         await db.clientes.clear();
         await db.ordensServico.clear();
         await db.movimentosCaixa.clear();
-        console.log('🗑️ Todos os dados foram removidos');
+        console.log('[-] Todos os dados foram removidos');
         return true;
       }
     }
@@ -365,5 +364,5 @@ class StorageManager {
 (async () => {
   window.storage = new StorageManager();
   await window.storage.init();
-  console.log('✅ Storage Manager pronto (IndexedDB)');
+  console.log('[+] Storage Manager pronto (IndexedDB)');
 })();

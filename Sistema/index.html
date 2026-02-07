@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oficina Manager - Sistema Profissional</title>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon.ico">
-    
+
     <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
 
     <!-- Font Awesome -->
@@ -19,6 +19,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        // Inicializar listeners globais para modal de exclusão
+        document.addEventListener('DOMContentLoaded', function () {
+            const btnCancelarExclusao = document.getElementById('btn-cancelar-exclusao');
+            const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao');
+
+            if (btnCancelarExclusao) {
+                btnCancelarExclusao.addEventListener('click', () => {
+                    const modal = document.getElementById('modal-confirmacao-exclusao');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                    registroParaExcluirId = null;
+                    tipoRegistroParaExcluir = null;
+                });
+            }
+
+            if (btnConfirmarExclusao) {
+                btnConfirmarExclusao.addEventListener('click', async () => {
+                    await confirmarExclusao();
+                });
+            }
+        });
+    </script>
 
     <!-- CSS -->
     <link rel="stylesheet" href="css/style.css">
@@ -252,6 +277,17 @@
                     </div>
                 </div>
 
+                <!-- Botões principais (Entrada/Saída) -->
+                <div class="caixa__actions">
+                    <button id="btn-entrada" class="btn btn-success">
+                        <i class="fas fa-arrow-down"></i> Nova Entrada
+                    </button>
+                    <button id="btn-saida" class="btn btn-danger">
+                        <i class="fas fa-arrow-up"></i> Nova Saída
+                    </button>
+                </div>
+
+
                 <div class="dashboard-grid">
                     <div class="stat-card">
                         <div class="stat-info">
@@ -272,6 +308,47 @@
                         </div>
                     </div>
                 </div>
+                <!-- RESUMO MENSAL -->
+                <div class="card-resumo-mensal" style="margin: 2rem 0;">
+                    <div class="card-header-mensal">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-calendar-alt"></i> Resumo do Mês
+                        </h3>
+                        <div class="controles-mes">
+                            <button id="btn-mes-anterior" class="btn-nav-mes" title="Mês Anterior">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span id="caixa-mes-ano" class="mes-ano-display">-</span>
+                            <button id="btn-mes-proximo" class="btn-nav-mes" title="Próximo Mês">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button id="btn-mes-atual" class="btn-mes-atual" title="Voltar para o Mês Atual">
+                                <i class="fas fa-calendar-day"></i> Mês Atual
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dashboard-grid" style="padding: 1.5rem; background: white;">
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>Entradas do Mês</h3>
+                                <p id="caixa-entradas-mes" style="color:#10b981">R$ 0,00</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>Saídas do Mês</h3>
+                                <p id="caixa-saidas-mes" style="color:#ef4444">R$ 0,00</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>Saldo do Mês</h3>
+                                <p id="caixa-saldo-mes">R$ 0,00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="table-card">
                     <div class="table-container">
                         <table>
@@ -289,7 +366,7 @@
                 </div>
             </section>
 
-            <section id="view-relatorios" class="view"> <!-- Mudei de data-view para id="view-relatorios" -->
+            <section id="view-relatorios" class="view">
                 <div class="header">
                     <div class="header-title">
                         <h2>Relatórios e Exportação</h2>
@@ -311,7 +388,7 @@
                             <h3>Fluxo de Caixa (Entradas vs Saídas)</h3>
                         </div>
                         <div style="height: 300px; position: relative;">
-                            
+
                             <canvas id="chartReceita"></canvas>
                         </div>
                     </div>
@@ -320,7 +397,7 @@
                             <h3>Status das O.S</h3>
                         </div>
                         <div style="height: 300px; position: relative;">
-                             
+
                             <canvas id="chartStatus"></canvas>
                         </div>
                     </div>
@@ -369,20 +446,42 @@
                         <input type="text" id="cliente-endereco" class="input-control">
                     </div>
 
-                    <div class="os-form-grid">
-                        <div class="input-group">
-                            <label>Veículo (Modelo)</label>
-                            <input type="text" id="cliente-veiculo-modelo" class="input-control">
-                        </div>
-                        <div class="input-group">
-                            <label>Ano</label>
-                            <input type="text" id="cliente-veiculo-ano" class="input-control">
-                        </div>
-                    </div>
+                    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e9ecef;">
+                        <h4
+                            style="margin-bottom: 1rem; color: #2c3e50; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-car"></i> Veículos do Cliente
+                        </h4>
 
-                    <div class="input-group">
-                        <label>Placa</label>
-                        <input type="text" id="cliente-veiculo-placa" class="input-control" placeholder="ABC-1234">
+                        <div class="os-form-grid">
+                            <div class="input-group">
+                                <label>Modelo <span style="color: #e74c3c;">*</span></label>
+                                <input type="text" id="cliente-veiculo-modelo" class="input-control"
+                                    placeholder="Ex: Fiat Uno, Honda Civic...">
+                            </div>
+                            <div class="input-group">
+                                <label>Ano</label>
+                                <input type="text" id="cliente-veiculo-ano" class="input-control" placeholder="Ex: 2020"
+                                    maxlength="4">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Placa</label>
+                            <input type="text" id="cliente-veiculo-placa" class="input-control" placeholder="ABC-1234"
+                                maxlength="8" style="text-transform: uppercase;">
+                        </div>
+
+                        <button type="button" id="btn-adicionar-veiculo" class="btn btn-secondary"
+                            style="margin-top: 0.75rem; width: 100%;">
+                            <i class="fas fa-plus-circle"></i> Adicionar Veículo
+                        </button>
+
+
+                        <div id="veiculos-lista" style="margin-top: 1rem;">
+                            <p style="color: #64748b; font-style: italic; text-align: center; padding: 1rem;">
+                                Nenhum veículo adicionado
+                            </p>
+                        </div>
                     </div>
 
                     <div class="input-group">
@@ -460,22 +559,44 @@
                         </div>
                     </div>
 
-                    <!-- Veículo -->
-                    <div class="veiculo-card" id="veiculo-info-container">
-                        <h4><i class="fas fa-car"></i> Veículo</h4>
-                        <div class="veiculo-details">
-                            <div class="veiculo-item">
-                                <span class="info-label">Modelo</span>
-                                <span class="info-value" id="detalhe-veiculo-modelo">-</span>
+                    <!-- Seção de Veículos -->
+                    <div class="form-section"
+                        style="margin-top: 1.5rem; border-top: 2px solid #e9ecef; padding-top: 1.5rem;">
+                        <h4
+                            style="margin-bottom: 1rem; color: #2c3e50; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-car"></i> Veículos do Cliente
+                        </h4>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Modelo <span style="color: #e74c3c;">*</span></label>
+                                <input type="text" id="cliente-veiculo-modelo" class="input-control"
+                                    placeholder="Ex: Fiat Uno, Honda Civic...">
                             </div>
-                            <div class="veiculo-item">
-                                <span class="info-label">Ano</span>
-                                <span class="info-value" id="detalhe-veiculo-ano">-</span>
+
+                            <div class="form-group">
+                                <label>Ano</label>
+                                <input type="text" id="cliente-veiculo-ano" class="input-control" placeholder="Ex: 2020"
+                                    maxlength="4">
                             </div>
-                            <div class="veiculo-item">
-                                <span class="info-label">Placa</span>
-                                <span class="info-value" id="detalhe-veiculo-placa">-</span>
+
+                            <div class="form-group">
+                                <label>Placa</label>
+                                <input type="text" id="cliente-veiculo-placa" class="input-control"
+                                    placeholder="Ex: ABC-1234" maxlength="8" style="text-transform: uppercase;">
                             </div>
+                        </div>
+
+                        <button type="button" id="btn-adicionar-veiculo" class="btn btn-secondary"
+                            style="margin-top: 0.75rem; width: 100%;">
+                            <i class="fas fa-plus-circle"></i> Adicionar Veículo
+                        </button>
+
+                        <!-- Lista de Veículos -->
+                        <div id="veiculos-lista" style="margin-top: 1rem;">
+                            <p style="color: #64748b; font-style: italic; text-align: center; padding: 1rem;">
+                                Nenhum veículo adicionado
+                            </p>
                         </div>
                     </div>
 
@@ -528,6 +649,81 @@
         </div>
     </div>
 
+    <!-- MODAL DETALHES DO CLIENTE (APENAS VISUALIZAÇÃO) -->
+    <div id="modal-detalhes-cliente" class="modal">
+        <div class="modal__backdrop"></div>
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-circle"></i> Detalhes do Cliente</h3>
+                <button type="button" class="btn btn-outline" style="padding: 0.5rem 1rem;"
+                    onclick="window.Clientes.closeDetalhes()">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Informações Pessoais -->
+                <div
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white; margin-bottom: 1.5rem;">
+                    <h2 id="detalhe-nome" style="margin: 0 0 0.5rem 0; font-size: 1.8rem;">-</h2>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem;">
+                        <div>
+                            <i class="fas fa-phone"></i> <strong>Telefone:</strong><br>
+                            <span id="detalhe-telefone" style="font-size: 1.1rem;">-</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-envelope"></i> <strong>Email:</strong><br>
+                            <span id="detalhe-email" style="font-size: 1.1rem;">-</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-id-card"></i> <strong>CPF/CNPJ:</strong><br>
+                            <span id="detalhe-documento" style="font-size: 1.1rem;">-</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-map-marker-alt"></i> <strong>Endereço:</strong><br>
+                            <span id="detalhe-endereco" style="font-size: 1.1rem;">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Veículos do Cliente -->
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="margin-bottom: 1rem; color: #2c3e50; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-car"></i> Veículos do Cliente
+                    </h4>
+                    <div id="detalhe-veiculos">
+                        <p style="color: #64748b; font-style: italic; text-align: center;">Carregando...</p>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="margin-bottom: 1rem; color: #2c3e50; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-comment"></i> Observações
+                    </h4>
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #e9ecef;">
+                        <p id="detalhe-observacoes" style="color: #495057; margin: 0;">-</p>
+                    </div>
+                </div>
+
+                <!-- Histórico de OS -->
+                <div>
+                    <h4 style="margin-bottom: 1rem; color: #2c3e50; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-history"></i> Histórico de Ordens de Serviço
+                    </h4>
+                    <div id="historico-os-container">
+                        <p style="color: #64748b; font-style: italic; text-align: center;">Carregando histórico...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="window.Clientes.closeDetalhes()">
+                    Fechar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="window.Clientes.editarCliente()">
+                    <i class="fas fa-edit"></i> Editar Cliente
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL NOVA/EDITAR OS -->
     <div id="modal-os" class="modal">
         <div class="modal__backdrop"></div>
@@ -550,27 +746,40 @@
                             </select>
                         </div>
 
-                        <div class="os-form-grid">
-                            <div class="input-group">
-                                <label>Veículo (Modelo) *</label>
-                                <input type="text" id="os-veiculo-modelo" class="input-control"
-                                    placeholder="Ex: Fiat Uno" required>
-                            </div>
-                            <div class="input-group">
-                                <label>Placa *</label>
-                                <input type="text" id="os-veiculo-placa" class="input-control" placeholder="ABC-1234"
-                                    required>
-                            </div>
+
+                        <div class="input-group">
+                            <label>Selecione o Veículo *</label>
+                            <select id="os-veiculo-select" class="input-control" disabled required>
+                                <option value="">Selecione um cliente primeiro</option>
+                            </select>
                         </div>
 
-                        <div class="os-form-grid">
-                            <div class="input-group">
-                                <label>Ano</label>
-                                <input type="text" id="os-veiculo-ano" class="input-control" placeholder="2020">
+
+                        <div id="os-campos-veiculo"
+                            style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #e9ecef; margin-top: 1rem;">
+                            <div class="os-form-grid">
+                                <div class="input-group">
+                                    <label>Veículo (Modelo) *</label>
+                                    <input type="text" id="os-veiculo-modelo" class="input-control"
+                                        placeholder="Modelo do veículo" required readonly>
+                                </div>
+                                <div class="input-group">
+                                    <label>Placa *</label>
+                                    <input type="text" id="os-veiculo-placa" class="input-control"
+                                        placeholder="ABC-1234" required readonly>
+                                </div>
                             </div>
-                            <div class="input-group">
-                                <label>KM Atual</label>
-                                <input type="number" id="os-km" class="input-control" placeholder="50000">
+
+                            <div class="os-form-grid">
+                                <div class="input-group">
+                                    <label>Ano</label>
+                                    <input type="text" id="os-veiculo-ano" class="input-control" placeholder="2020"
+                                        readonly>
+                                </div>
+                                <div class="input-group">
+                                    <label>KM Atual</label>
+                                    <input type="number" id="os-km" class="input-control" placeholder="50000">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -925,6 +1134,8 @@
                     id="btn-fechar-modal-caixa">×</button>
             </div>
             <form id="form-caixa">
+                <input type="hidden" id="caixa-id" value="">
+
                 <div class="modal-body">
                     <input type="hidden" id="caixa-tipo">
 
@@ -1001,6 +1212,28 @@
         </div>
     </div>
 
+    <!-- MODAL: CONFIRMAÇÃO DE EXCLUSÃO UNIVERSAL -->
+    <div id="modal-confirmacao-exclusao" style="display: none;" class="modal-confirmacao">
+        <div class="modal-confirmacao__content">
+            <div class="modal-confirmacao__header">
+                <div class="modal-confirmacao__icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="modal-confirmacao__title">Excluir Registro?</h3>
+            </div>
+            <p class="modal-confirmacao__message">
+                ℹ Esta ação não pode ser desfeita. O registro será permanentemente excluído.
+            </p>
+            <div class="modal-confirmacao__footer">
+                <button class="modal-confirmacao__btn-cancelar" id="btn-cancelar-exclusao">
+                    Cancelar
+                </button>
+                <button class="modal-confirmacao__btn-excluir" id="btn-confirmar-exclusao">
+                    Excluir
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Toast Container -->
     <div id="toast-container" style="position:fixed; bottom: 20px; right:20px; z-index:9999;"></div>

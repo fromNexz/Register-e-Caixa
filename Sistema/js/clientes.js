@@ -17,6 +17,8 @@ if (window.Clientes) {
 const Clientes = {
     initialized: false,
     clienteAtualId: null,
+    veiculosTemp: [],
+
 
     init() {
 
@@ -32,6 +34,11 @@ const Clientes = {
         const modalDetalhes = document.getElementById('modal-detalhes-cliente');
         const backdrop = modal?.querySelector('.modal__backdrop');
         const backdropDetalhes = modalDetalhes?.querySelector('.modal__backdrop');
+        const btnAdicionarVeiculo = document.getElementById('btn-adicionar-veiculo');
+
+        if (btnAdicionarVeiculo) {
+            btnAdicionarVeiculo.addEventListener('click', () => this.adicionarVeiculo());
+        }
 
         // Event listeners
         if (btnNovo) btnNovo.addEventListener('click', () => this.openModal());
@@ -61,26 +68,26 @@ const Clientes = {
             btnNovaOsDoDetalhe.addEventListener('click', async () => {
                 ('[=] Nova OS do detalhe clicado');
 
-                
+
                 this.closeDetalhes();
 
-                
+
                 if (window.router) {
                     window.router.navigateTo('os');
                 }
 
-                
+
                 setTimeout(() => {
                     if (window.OS && window.OS.openModal) {
-                        
+
                         window.OS.openModal();
 
-                        
+
                         setTimeout(() => {
                             const selectCliente = document.getElementById('os-cliente');
                             if (selectCliente) {
                                 selectCliente.value = this.clienteAtualId;
-                                
+
                                 selectCliente.dispatchEvent(new Event('change'));
                             }
                         }, 100);
@@ -193,14 +200,28 @@ const Clientes = {
             document.getElementById('cliente-documento').value = cliente.documento || '';
             document.getElementById('cliente-email').value = cliente.email || '';
             document.getElementById('cliente-endereco').value = cliente.endereco || '';
-            document.getElementById('cliente-veiculo-modelo').value = cliente.veiculoModelo || '';
-            document.getElementById('cliente-veiculo-ano').value = cliente.veiculoAno || '';
-            document.getElementById('cliente-veiculo-placa').value = cliente.veiculoPlaca || '';
             document.getElementById('cliente-observacoes').value = cliente.observacoes || '';
+
+
+            this.veiculosTemp = cliente.veiculos || [];
+
+
+            if (!cliente.veiculos && (cliente.veiculoModelo || cliente.veiculoPlaca)) {
+                this.veiculosTemp = [{
+                    id: Date.now(),
+                    modelo: cliente.veiculoModelo || '',
+                    ano: cliente.veiculoAno || '',
+                    placa: cliente.veiculoPlaca || ''
+                }];
+            }
+
+            this.renderVeiculosLista();
         } else {
             titulo.textContent = 'Novo Cliente';
             form.reset();
             document.getElementById('cliente-id').value = '';
+            this.veiculosTemp = [];
+            this.renderVeiculosLista();
         }
 
         modal.classList.add('is-open');
@@ -212,53 +233,97 @@ const Clientes = {
     },
 
     async openDetalhes(clienteId) {
-        this.clienteAtualId = clienteId;
         const cliente = await window.storage.getClienteById(clienteId);
-
         if (!cliente) {
             Utils.showToast('Cliente não encontrado', 'error');
             return;
         }
 
-        // Preencher informações do cliente
-        document.getElementById('detalhe-nome').textContent = cliente.nome || '-';
-        document.getElementById('detalhe-id-sequencial').textContent = cliente.idSequencial || '-';
-        document.getElementById('detalhe-telefone').textContent = cliente.telefone || '-';
-        document.getElementById('detalhe-email').textContent = cliente.email || '-';
-        document.getElementById('detalhe-documento').textContent = cliente.documento || '-';
-        document.getElementById('detalhe-endereco').textContent = cliente.endereco || '-';
-        document.getElementById('detalhe-veiculo-modelo').textContent = cliente.veiculoModelo || '-';
-        document.getElementById('detalhe-veiculo-ano').textContent = cliente.veiculoAno || '-';
-        document.getElementById('detalhe-veiculo-placa').textContent = cliente.veiculoPlaca || '-';
-        document.getElementById('detalhe-observacoes').textContent = cliente.observacoes || 'Nenhuma observação registrada';
+        // Salvar ID do cliente para edição posterior
+        this.clienteDetalhesId = clienteId;
 
-        // Ocultar seções vazias
-        const veiculoContainer = document.getElementById('veiculo-info-container');
-        if (!cliente.veiculoModelo && !cliente.veiculoAno && !cliente.veiculoPlaca) {
-            veiculoContainer.style.display = 'none';
-        } else {
-            veiculoContainer.style.display = 'block';
+        const modal = document.getElementById('modal-detalhes-cliente');
+        if (!modal) {
+            console.error('[X] Modal de detalhes não encontrado!');
+            return;
         }
 
-        const observacoesContainer = document.getElementById('observacoes-container');
-        if (!cliente.observacoes) {
-            observacoesContainer.style.display = 'none';
-        } else {
-            observacoesContainer.style.display = 'block';
+        // Preencher informações básicas
+        const elNome = document.getElementById('detalhe-nome');
+        const elTelefone = document.getElementById('detalhe-telefone');
+        const elDocumento = document.getElementById('detalhe-documento');
+        const elEmail = document.getElementById('detalhe-email');
+        const elEndereco = document.getElementById('detalhe-endereco');
+        const elObservacoes = document.getElementById('detalhe-observacoes');
+
+        if (elNome) elNome.textContent = cliente.nome || '-';
+        if (elTelefone) elTelefone.textContent = cliente.telefone || '-';
+        if (elDocumento) elDocumento.textContent = cliente.documento || '-';
+        if (elEmail) elEmail.textContent = cliente.email || '-';
+        if (elEndereco) elEndereco.textContent = cliente.endereco || '-';
+        if (elObservacoes) elObservacoes.textContent = cliente.observacoes || 'Sem observações';
+
+        // 🆕 RENDERIZAR VEÍCULOS
+        const elVeiculos = document.getElementById('detalhe-veiculos');
+        if (elVeiculos) {
+            const veiculos = cliente.veiculos || [];
+
+            // Manter compatibilidade com formato antigo
+            if (veiculos.length === 0 && cliente.veiculoModelo) {
+                veiculos.push({
+                    modelo: cliente.veiculoModelo,
+                    ano: cliente.veiculoAno,
+                    placa: cliente.veiculoPlaca
+                });
+            }
+
+            if (veiculos.length > 0) {
+                elVeiculos.innerHTML = veiculos.map((veiculo, index) => `
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border: 1px solid #e9ecef; transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span style="background: #667eea; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                    CARRO ${index + 1}
+                    </span>
+                    <strong style="font-size: 1.15rem; color: #2c3e50;">${veiculo.modelo}</strong>
+                </div>
+                <div style="display: flex; gap: 1.5rem; font-size: 0.95rem; color: #6c757d; padding-left: 0.5rem;">
+                    ${veiculo.ano ? `<span><i class="fas fa-calendar" style="margin-right: 0.4rem; color: #667eea;"></i><strong>Ano:</strong> ${veiculo.ano}</span>` : ''}
+                    ${veiculo.placa ? `<span><i class="fas fa-car" style="margin-right: 0.4rem; color: #667eea;"></i><strong>Placa:</strong> ${veiculo.placa.toUpperCase()}</span>` : ''}
+                </div>
+                </div>
+            `).join('');
+                    } else {
+                        elVeiculos.innerHTML = `
+                <div style="text-align: center; padding: 2rem; background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6;">
+                <i class="fas fa-car" style="font-size: 3rem; color: #ced4da; margin-bottom: 1rem;"></i>
+                <p style="color: #6c757d; margin: 0; font-style: italic;">Nenhum veículo cadastrado</p>
+                </div>
+            `;
+            }
         }
 
         // Renderizar histórico de OS
         await this.renderHistorico(clienteId);
 
-        // Abrir modal
-        const modal = document.getElementById('modal-detalhes-cliente');
-        if (modal) modal.classList.add('is-open');
+        modal.classList.add('is-open');
+        console.log('[✓] Modal de detalhes aberto para:', cliente.nome);
     },
 
     closeDetalhes() {
         const modal = document.getElementById('modal-detalhes-cliente');
         if (modal) modal.classList.remove('is-open');
         this.clienteAtualId = null;
+    },
+
+    editarCliente() {
+        this.closeDetalhes();
+        if (this.clienteDetalhesId) {
+            window.storage.getClienteById(this.clienteDetalhesId).then(cliente => {
+                if (cliente) {
+                    this.openModal(cliente);
+                }
+            });
+        }
     },
 
     async renderHistorico(clienteId) {
@@ -377,8 +442,15 @@ const Clientes = {
             veiculoModelo: document.getElementById('cliente-veiculo-modelo').value.trim(),
             veiculoAno: document.getElementById('cliente-veiculo-ano').value.trim(),
             veiculoPlaca: document.getElementById('cliente-veiculo-placa').value.trim(),
-            observacoes: document.getElementById('cliente-observacoes').value.trim()
+            observacoes: document.getElementById('cliente-observacoes').value.trim(),
+            veiculos: this.veiculosTemp
         };
+
+        if (this.veiculosTemp.length > 0) {
+            clienteData.veiculoModelo = this.veiculosTemp[0].modelo || '';
+            clienteData.veiculoAno = this.veiculosTemp[0].ano || '';
+            clienteData.veiculoPlaca = this.veiculosTemp[0].placa || '';
+        }
 
         if (id) {
             // Atualizar
@@ -391,18 +463,88 @@ const Clientes = {
         }
 
         this.closeModal();
+        this.veiculosTemp = [];
         await this.render();
     },
 
     async delete(id) {
-        const cliente = await window.storage.getClienteById(id);
-        if (!cliente) return;
+        abrirModalConfirmacaoExclusao(id, 'cliente');
+    },
 
-        if (confirm(`Deseja realmente excluir o cliente "${cliente.nome}"?`)) {
-            await window.storage.deleteCliente(id);
-            Utils.showToast('Cliente excluído com sucesso!', 'info');
-            this.render();
+    adicionarVeiculo() {
+        const modelo = document.getElementById('cliente-veiculo-modelo')?.value.trim();
+        const ano = document.getElementById('cliente-veiculo-ano')?.value.trim();
+        const placa = document.getElementById('cliente-veiculo-placa')?.value.trim();
+
+        if (!modelo) {
+            Utils.showToast('Informe o modelo do veículo', 'error');
+            return;
         }
+
+        const veiculo = {
+            id: Date.now(),
+            modelo: modelo,
+            ano: ano,
+            placa: placa
+        };
+
+        this.veiculosTemp.push(veiculo);
+        this.renderVeiculosLista();
+
+        // Limpar campos
+        document.getElementById('cliente-veiculo-modelo').value = '';
+        document.getElementById('cliente-veiculo-ano').value = '';
+        document.getElementById('cliente-veiculo-placa').value = '';
+
+        Utils.showToast('Veículo adicionado!', 'success');
+        console.log('[✓] Veículo adicionado:', veiculo);
+    },
+
+
+    removerVeiculo(veiculoId) {
+        this.veiculosTemp = this.veiculosTemp.filter(v => v.id !== veiculoId);
+        this.renderVeiculosLista();
+        Utils.showToast('Veículo removido', 'info');
+        console.log('[✓] Veículo removido:', veiculoId);
+    },
+
+
+    renderVeiculosLista() {
+        const lista = document.getElementById('veiculos-lista');
+        if (!lista) return;
+
+        lista.innerHTML = '';
+
+        if (this.veiculosTemp.length === 0) {
+            lista.innerHTML = '<p style="color: #64748b; font-style: italic; text-align: center; padding: 1rem;">Nenhum veículo adicionado</p>';
+            return;
+        }
+
+        this.veiculosTemp.forEach((veiculo, index) => {
+            const div = document.createElement('div');
+            div.className = 'veiculo-item';
+            div.style.cssText = 'background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e9ecef;';
+
+            div.innerHTML = `
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+            <span style="background: #667eea; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+              CARRO ${index + 1}
+            </span>
+            <strong style="font-size: 1.1rem; color: #2c3e50;">${veiculo.modelo}</strong>
+          </div>
+          <div style="display: flex; gap: 1rem; font-size: 0.9rem; color: #6c757d; margin-top: 0.5rem;">
+            ${veiculo.ano ? `<span><i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>${veiculo.ano}</span>` : ''}
+            ${veiculo.placa ? `<span><i class="fas fa-car" style="margin-right: 0.25rem;"></i>${veiculo.placa}</span>` : ''}
+          </div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="window.Clientes.removerVeiculo(${veiculo.id})" style="padding: 0.5rem 0.75rem;">
+          <i class="fas fa-trash"></i>
+        </button>
+      `;
+
+            lista.appendChild(div);
+        });
     }
 };
 

@@ -69,19 +69,54 @@ const OS = {
         if (selectCliente) {
             selectCliente.addEventListener('change', async () => {
                 const clienteId = selectCliente.value;
+
                 if (clienteId) {
+                    // 🆕 Carregar veículos do cliente no select
+                    await this.carregarVeiculosCliente(clienteId);
+
+                    // Manter compatibilidade com sistema antigo (auto-preencher se tiver apenas 1 veículo)
                     const cliente = await window.storage.getClienteById(clienteId);
                     if (cliente) {
-                        if (cliente.veiculoModelo) {
-                            document.getElementById('os-veiculo-modelo').value = cliente.veiculoModelo;
+                        const veiculos = cliente.veiculos || [];
+
+                        // Se tiver apenas 1 veículo, preencher automaticamente
+                        if (veiculos.length === 1) {
+                            document.getElementById('os-veiculo-modelo').value = veiculos[0].modelo || '';
+                            document.getElementById('os-veiculo-placa').value = veiculos[0].placa || '';
+                            document.getElementById('os-veiculo-ano').value = veiculos[0].ano || '';
+
+                            // Selecionar automaticamente no dropdown
+                            const selectVeiculo = document.getElementById('os-veiculo-select');
+                            if (selectVeiculo) selectVeiculo.value = '0';
                         }
-                        if (cliente.veiculoPlaca) {
-                            document.getElementById('os-veiculo-placa').value = cliente.veiculoPlaca;
-                        }
-                        if (cliente.veiculoAno) {
-                            document.getElementById('os-veiculo-ano').value = cliente.veiculoAno;
+                        // Compatibilidade com formato antigo (sem array de veículos)
+                        else if (veiculos.length === 0 && cliente.veiculoModelo) {
+                            document.getElementById('os-veiculo-modelo').value = cliente.veiculoModelo || '';
+                            document.getElementById('os-veiculo-placa').value = cliente.veiculoPlaca || '';
+                            document.getElementById('os-veiculo-ano').value = cliente.veiculoAno || '';
+
+                            const selectVeiculo = document.getElementById('os-veiculo-select');
+                            if (selectVeiculo) selectVeiculo.value = '0';
                         }
                     }
+                } else {
+                    // Limpar select de veículos se não houver cliente selecionado
+                    await this.carregarVeiculosCliente(null);
+                }
+            });
+        }
+
+        // 🆕 EVENT LISTENER PARA O SELECT DE VEÍCULOS
+        const selectVeiculo = document.getElementById('os-veiculo-select');
+        if (selectVeiculo) {
+            selectVeiculo.addEventListener('change', (e) => {
+                const option = e.target.selectedOptions[0];
+                if (option && option.dataset.veiculo) {
+                    const veiculo = JSON.parse(option.dataset.veiculo);
+                    document.getElementById('os-veiculo-modelo').value = veiculo.modelo || '';
+                    document.getElementById('os-veiculo-ano').value = veiculo.ano || '';
+                    document.getElementById('os-veiculo-placa').value = veiculo.placa || '';
+                    console.log('[✓] Veículo selecionado:', veiculo.modelo);
                 }
             });
         }
@@ -148,10 +183,10 @@ const OS = {
 
         const clientes = await window.storage.getClientes();
 
-        
+
         select.innerHTML = '<option value="">Selecione um cliente</option>';
 
-        
+
         clientes.forEach(cliente => {
             const option = document.createElement('option');
             option.value = cliente.id;
@@ -180,7 +215,7 @@ const OS = {
             return;
         }
 
-        
+
         ordensServico.sort((a, b) => (b.numero || 0) - (a.numero || 0));
 
         ordensServico.forEach(os => {
@@ -251,7 +286,7 @@ const OS = {
 
         if (!modal || !form) return;
 
-        
+
         await this.loadClientesSelect();
 
         if (os) {
@@ -282,24 +317,24 @@ const OS = {
             const parcelasTableContainer = document.getElementById('parcelas-table-container');
 
             if (os.formaPagamento === 'parcelado' && os.parcelas && os.parcelas.length > 0) {
-                
+
                 if (parcelamentoContainer) {
                     parcelamentoContainer.style.display = 'block';
                 }
 
-                
+
                 const numParcelasSelect = document.getElementById('os-num-parcelas');
                 if (numParcelasSelect) {
                     numParcelasSelect.value = os.parcelas.length;
                 }
 
-                
+
                 const dataPrimeiraInput = document.getElementById('os-data-primeira-parcela');
                 if (dataPrimeiraInput && os.parcelas[0]) {
                     dataPrimeiraInput.value = os.parcelas[0].data;
                 }
 
-                
+
                 const tbody = document.getElementById('parcelas-tbody');
                 if (tbody) {
                     tbody.innerHTML = '';
@@ -348,7 +383,7 @@ const OS = {
                     }
                 }
             } else {
-                
+
                 if (parcelamentoContainer) {
                     parcelamentoContainer.style.display = 'none';
                 }
@@ -395,7 +430,7 @@ const OS = {
 
         const cliente = await window.storage.getClienteById(os.clienteId);
 
-        
+
         document.getElementById('detalhes-os-numero').textContent = `#${os.numero || '-'}`;
 
         // Status
@@ -473,7 +508,7 @@ const OS = {
 
         // === ANEXAR EVENT LISTENERS APÓS MODAL ESTAR ABERTO ===
         setTimeout(() => {
-            
+
             const btnFechar = document.getElementById('btn-fechar-detalhes-os');
             if (btnFechar) {
                 btnFechar.onclick = () => {
@@ -512,13 +547,13 @@ const OS = {
             if (btnEditar) {
                 btnEditar.onclick = () => {
 
-                    
+
                     const modalDetalhes = document.getElementById('modal-detalhes-os');
                     if (modalDetalhes) {
                         modalDetalhes.classList.remove('is-open');
                     }
 
-                    
+
                     setTimeout(() => {
                         const modal = document.getElementById('modal-os');
                         const titulo = document.getElementById('modal-os-titulo');
@@ -526,10 +561,10 @@ const OS = {
 
                         if (!modal || !form) return;
 
-                        
+
                         this.loadClientesSelect();
 
-                        
+
                         titulo.innerHTML = '<i class="fas fa-file-invoice"></i> Editar Ordem de Serviço';
                         document.getElementById('os-id').value = os.id;
                         document.getElementById('os-cliente').value = os.clienteId || '';
@@ -631,16 +666,16 @@ const OS = {
             return;
         }
 
-        
+
         const valorParcela = (valorTotal / numParcelas).toFixed(2);
         const tbody = document.getElementById('parcelas-tbody');
         const container = document.getElementById('parcelas-table-container');
 
         tbody.innerHTML = '';
 
-        
+
         for (let i = 1; i <= numParcelas; i++) {
-           
+
             const dataParcela = new Date(dataPrimeira);
             dataParcela.setMonth(dataParcela.getMonth() + (i - 1));
             const dataFormatada = dataParcela.toISOString().split('T')[0];
@@ -768,6 +803,55 @@ const OS = {
 
         // Atualizar dashboard
         if (window.Dashboard) await window.Dashboard.render();
+    },
+
+    async delete(id) {
+        abrirModalConfirmacaoExclusao(id, 'OS');
+    },
+
+    async carregarVeiculosCliente(clienteId) {
+        const selectVeiculo = document.getElementById('os-veiculo-select');
+        const camposVeiculo = document.getElementById('os-campos-veiculo');
+
+        if (!selectVeiculo) return;
+
+        selectVeiculo.innerHTML = '<option value="">Selecione um veículo</option>';
+
+        if (!clienteId) {
+            selectVeiculo.disabled = true;
+            camposVeiculo.style.display = 'none';
+            return;
+        }
+
+        const cliente = await window.storage.getClienteById(clienteId);
+
+        if (!cliente) return;
+
+        const veiculos = cliente.veiculos || [];
+
+        // Manter compatibilidade com sistema antigo
+        if (veiculos.length === 0 && cliente.veiculoModelo) {
+            veiculos.push({
+                id: 'legado',
+                modelo: cliente.veiculoModelo,
+                ano: cliente.veiculoAno,
+                placa: cliente.veiculoPlaca
+            });
+        }
+
+        if (veiculos.length > 0) {
+            selectVeiculo.disabled = false;
+            veiculos.forEach((veiculo, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${veiculo.modelo}${veiculo.placa ? ` - ${veiculo.placa}` : ''}${veiculo.ano ? ` (${veiculo.ano})` : ''}`;
+                option.dataset.veiculo = JSON.stringify(veiculo);
+                selectVeiculo.appendChild(option);
+            });
+        } else {
+            selectVeiculo.innerHTML = '<option value="">Cliente sem veículos cadastrados</option>';
+            selectVeiculo.disabled = true;
+        }
     }
 
 };

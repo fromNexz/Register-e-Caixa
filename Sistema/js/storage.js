@@ -9,6 +9,80 @@ db.version(1).stores({
   ordensServico: '++id, numero, clienteId, status, dataAbertura, dataCriacao',
   movimentosCaixa: '++id, tipo, osId, clienteId, data, dataCriacao'
 });
+let registroParaExcluirId = null;
+let tipoRegistroParaExcluir = null;
+
+function abrirModalConfirmacaoExclusao(id, tipo) {
+  registroParaExcluirId = id;
+  tipoRegistroParaExcluir = tipo;
+
+  // Atualizar título e mensagem do modal
+  const titulo = document.querySelector('.modal-confirmacao__title');
+  const mensagem = document.querySelector('.modal-confirmacao__message');
+
+  if (tipo === 'cliente') {
+    titulo.textContent = 'Excluir Cliente?';
+    mensagem.innerHTML = 'Esta ação não pode ser desfeita. O cliente e todos os seus registros serão permanentemente excluídos.';
+  } else if (tipo === 'os') {
+    titulo.textContent = 'Excluir OS?';
+    mensagem.innerHTML = 'Esta ação não pode ser desfeita. A ordem de serviço será permanentemente excluída.';
+  } else if (tipo === 'caixa') {
+    titulo.textContent = 'Excluir Movimento?';
+    mensagem.innerHTML = 'Esta ação não pode ser desfeita. O movimento será permanentemente excluído.';
+  }
+
+  // Abrir modal
+  const modal = document.getElementById('modal-confirmacao-exclusao');
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+// Função universal para confirmar exclusão
+async function confirmarExclusao() {
+  if (!registroParaExcluirId || !tipoRegistroParaExcluir) {
+    Utils.showToast('ID do registro não encontrado', 'error');
+    return;
+  }
+
+  const modal = document.getElementById('modal-confirmacao-exclusao');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+
+  try {
+
+    if (tipoRegistroParaExcluir === 'cliente') {
+      await window.storage.deleteCliente(registroParaExcluirId);
+      Utils.showToast('Cliente excluído com sucesso!', 'success');
+
+      if (window.Clientes) await window.Clientes.render();
+      if (window.Dashboard) await window.Dashboard.render();
+
+    } else if (tipoRegistroParaExcluir === 'os') {
+      await window.storage.deleteOS(registroParaExcluirId);
+      Utils.showToast('OS excluída com sucesso!', 'success');
+
+      if (window.OS) await window.OS.render();
+      if (window.Dashboard) await window.Dashboard.render();
+
+    } else if (tipoRegistroParaExcluir === 'caixa') {
+      await window.storage.deleteMovimentoCaixa(registroParaExcluirId);
+      Utils.showToast('Movimento excluído com sucesso!', 'success');
+
+      if (window.Caixa) await window.Caixa.render();
+      if (window.Dashboard) await window.Dashboard.render();
+    }
+
+    // Limpar variáveis
+    registroParaExcluirId = null;
+    tipoRegistroParaExcluir = null;
+
+  } catch (error) {
+    console.error('Erro ao excluir:', error);
+    Utils.showToast('Erro ao excluir registro', 'error');
+  }
+}
 
 class StorageManager {
   constructor() {
@@ -18,62 +92,26 @@ class StorageManager {
 
   async init() {
     try {
-      // Verificar se precisa migrar dados do localStorage
-      await this.migrarDoLocalStorage();
-      
-      const clientes = await db.clientes.count();
-      const os = await db.ordensServico.count();
-      const caixa = await db.movimentosCaixa.count();
-      
-      console.log('[+] Storage IndexedDB inicializado:', {
-        clientes,
-        os,
-        caixa
-      });
-    } catch (error) {
-      console.error('❌ Erro ao inicializar IndexedDB:', error);
-    }
-  }
-
-  async migrarDoLocalStorage() {
-    
-    const count = await db.clientes.count();
-    if (count > 0) return; 
-
-    try {
-      const clientesAntigos = JSON.parse(localStorage.getItem(this.keys.CLIENTES) || '[]');
-      const osAntigas = JSON.parse(localStorage.getItem(this.keys.OS) || '[]');
-      const caixaAntigo = JSON.parse(localStorage.getItem(this.keys.CAIXA) || '[]');
-
-      if (clientesAntigos.length > 0 || osAntigas.length > 0 || caixaAntigo.length > 0) {
-        console.log('[=] Migrando dados do localStorage para IndexedDB...');
         
-        if (clientesAntigos.length > 0) {
-          await db.clientes.bulkAdd(clientesAntigos);
-        }
-        if (osAntigas.length > 0) {
-          await db.ordensServico.bulkAdd(osAntigas);
-        }
-        if (caixaAntigo.length > 0) {
-          await db.movimentosCaixa.bulkAdd(caixaAntigo);
-        }
-
-        console.log('[+] Migração concluída!');
+        const clientes = await db.clientes.count();
+        const os = await db.ordensServico.count();
+        const caixa = await db.movimentosCaixa.count();
         
-        // Opcional: limpar localStorage antigo
-        // localStorage.removeItem(this.keys.CLIENTES);
-        // localStorage.removeItem(this.keys.OS);
-        // localStorage.removeItem(this.keys.CAIXA);
-      }
+        console.log('📦 Storage IndexedDB inicializado:', {
+            clientes,
+            os,
+            caixa
+        });
     } catch (error) {
-      console.log('[ℹ] Nenhum dado antigo para migrar');
+        console.error('❌ Erro ao inicializar IndexedDB:', error);
     }
-  }
+}
+
 
   // ==========================================
   // === CLIENTES ===
   // ==========================================
-  
+
   async getClientes() {
     return await db.clientes.toArray();
   }
@@ -86,7 +124,7 @@ class StorageManager {
     cliente.id = this.generateId();
     cliente.idSequencial = await this.generateSequentialId('cliente');
     cliente.dataCriacao = new Date().toISOString();
-    
+
     await db.clientes.add(cliente);
     return cliente;
   }
@@ -108,7 +146,7 @@ class StorageManager {
   // ==========================================
   // === ORDENS DE SERVIÇO ===
   // ==========================================
-  
+
   async getOS() {
     return await db.ordensServico.toArray();
   }
@@ -128,10 +166,10 @@ class StorageManager {
       numero: await this.getNextOSNumber(),
       dataCriacao: new Date().toISOString()
     };
-    
+
     await db.ordensServico.add(os);
-    
-    
+
+
     if (os.valorPago > 0) {
       await this.addMovimentoCaixa({
         tipo: 'entrada',
@@ -142,22 +180,22 @@ class StorageManager {
         clienteId: os.clienteId
       });
     }
-    
+
     return os;
   }
 
   async updateOS(id, osData) {
     const osAntiga = await db.ordensServico.get(id);
-    
+
     if (osAntiga) {
       const valorPagoAntigo = osAntiga.valorPago || 0;
       const valorPagoNovo = osData.valorPago || 0;
-      
-      
+
+
       const osAtualizada = { ...osAntiga, ...osData };
       await db.ordensServico.put(osAtualizada);
-      
-      
+
+
       if (valorPagoNovo > valorPagoAntigo) {
         const diferenca = valorPagoNovo - valorPagoAntigo;
         await this.addMovimentoCaixa({
@@ -169,7 +207,7 @@ class StorageManager {
           clienteId: osData.clienteId || osAntiga.clienteId
         });
       }
-      
+
       return osAtualizada;
     }
     return null;
@@ -177,7 +215,7 @@ class StorageManager {
 
   async deleteOS(id) {
     await db.ordensServico.delete(id);
-    
+
     await db.movimentosCaixa.where('osId').equals(id).delete();
   }
 
@@ -191,7 +229,7 @@ class StorageManager {
   // ==========================================
   // === CAIXA ===
   // ==========================================
-  
+
   async getMovimentosCaixa() {
     return await db.movimentosCaixa.toArray();
   }
@@ -211,7 +249,7 @@ class StorageManager {
     const movimentos = await db.movimentosCaixa.toArray();
     let entradas = 0;
     let saidas = 0;
-    
+
     movimentos.forEach(m => {
       if (m.tipo === 'entrada') {
         entradas += m.valor || 0;
@@ -219,7 +257,7 @@ class StorageManager {
         saidas += m.valor || 0;
       }
     });
-    
+
     return {
       entradas,
       saidas,
@@ -227,10 +265,20 @@ class StorageManager {
     };
   }
 
+  async getMovimentoCaixaById(id) {
+    return await db.movimentosCaixa.get(id);
+  }
+
+  async updateMovimentoCaixa(movimento) {
+    await db.movimentosCaixa.put(movimento);
+    return movimento;
+  }
+
+
   // ==========================================
   // === ESTATÍSTICAS ===
   // ==========================================
-  
+
   async getEstatisticas() {
     const hoje = new Date();
     const mesAtual = hoje.getMonth();
@@ -248,7 +296,7 @@ class StorageManager {
     });
 
     const osConcluidas = osDoMes.filter(os => os.status === 'concluido').length;
-    const osPendentes = todasOS.filter(os => 
+    const osPendentes = todasOS.filter(os =>
       os.status !== 'concluido' && os.status !== 'cancelado'
     ).length;
 
@@ -281,7 +329,7 @@ class StorageManager {
   // ==========================================
   // === UTILITÁRIOS ===
   // ==========================================
-  
+
   generateId() {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -295,7 +343,7 @@ class StorageManager {
           return match ? parseInt(match[0]) : 0;
         })
         .filter(n => !isNaN(n));
-      
+
       const nextNum = nums.length > 0 ? Math.max(...nums) + 1 : 1;
       return `#${String(nextNum).padStart(3, '0')}`;
     }
@@ -305,12 +353,12 @@ class StorageManager {
   // ==========================================
   // === BACKUP E RESTAURAÇÃO ===
   // ==========================================
-  
+
   async exportarDados() {
     const clientes = await db.clientes.toArray();
     const ordensServico = await db.ordensServico.toArray();
     const movimentosCaixa = await db.movimentosCaixa.toArray();
-    
+
     const dados = {
       clientes,
       ordensServico,
@@ -318,14 +366,14 @@ class StorageManager {
       dataExportacao: new Date().toISOString(),
       versao: APP_CONFIG.version
     };
-    
+
     return JSON.stringify(dados, null, 2);
   }
 
   async importarDados(jsonString) {
     try {
       const dados = JSON.parse(jsonString);
-      
+
       if (dados.clientes) {
         await db.clientes.clear();
         await db.clientes.bulkAdd(dados.clientes);
@@ -338,7 +386,7 @@ class StorageManager {
         await db.movimentosCaixa.clear();
         await db.movimentosCaixa.bulkAdd(dados.movimentosCaixa);
       }
-      
+
       return true;
     } catch (error) {
       console.error('[X] Erro ao importar dados:', error);

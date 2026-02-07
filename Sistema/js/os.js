@@ -206,20 +206,20 @@ const OS = {
 
         if (ordensServico.length === 0) {
             tbody.innerHTML = `
-        <tr class="empty-row">
-          <td colspan="7" style="text-align: center; padding: 2rem; color: #64748b; font-style: italic;">
-            Nenhuma ordem de serviço cadastrada
-          </td>
-        </tr>
-      `;
+            <tr class="empty-row">
+                <td colspan="7" style="text-align: center; padding: 2rem; color: #64748b; font-style: italic;">
+                    Nenhuma ordem de serviço cadastrada
+                </td>
+            </tr>
+        `;
             return;
         }
-
 
         ordensServico.sort((a, b) => (b.numero || 0) - (a.numero || 0));
 
         ordensServico.forEach(os => {
             const cliente = clientes.find(c => c.id === os.clienteId);
+            const clienteNome = cliente ? cliente.nome : 'Cliente não encontrado'; // 🆕 ADICIONE ESTA LINHA
 
             // Status
             let statusClass = 'status-pending';
@@ -244,39 +244,74 @@ const OS = {
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-        <td><strong>#${os.numero || '-'}</strong></td>
-        <td>${cliente?.nome || '-'}</td>
-        <td>${os.veiculoModelo || '-'} <br><small style="color: #64748b;">${os.veiculoPlaca || ''}</small></td>
-        <td>${Utils.formatDate(os.dataAbertura)}</td>
-        <td><strong>${Utils.formatCurrency(os.valorTotal)}</strong></td>
-        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-        <td>
-          <button class="btn btn-detalhes btn-sm" data-id="${os.id}">
-            <i class="fas fa-eye"></i>
-          </button>
-          <button class="btn btn-editar btn-sm" data-id="${os.id}">
-            <i class="fas fa-edit"></i>
-          </button>
-        </td>
-      `;
+            <td><strong>#${os.numero || os.id}</strong></td>
+            <td>${Utils.formatDate(os.dataAbertura)}</td>
+            <td>${clienteNome}</td>
+            <td>
+                <strong>${os.veiculoModelo || '-'}</strong>
+                ${os.veiculoPlaca ? `<br><small style="color: #64748b;">${os.veiculoPlaca}</small>` : ''}
+            </td>
+            <td style="font-weight: 600; color: #2c3e50;">${Utils.formatCurrency(os.valorTotal)}</td>
+            <td><span class="badge ${statusClass}">${statusText}</span></td>
+            <td style="text-align: center;">
+                <div style="display: flex; gap: 0.3rem; justify-content: center;">
+                    <button class="btn btn-sm btn-info" onclick="window.OS.openDetalhes('${os.id}')" title="Ver Detalhes">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="window.OS.editarOS('${os.id}')" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="window.OS.excluirOS('${os.id}')" title="Excluir">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
             tbody.appendChild(tr);
         });
+    },
 
-        // Event listeners dos botões
-        tbody.querySelectorAll('.btn-detalhes').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.dataset.id;
-                await this.openDetalhes(id);
-            });
-        });
+    async excluirOS(osId) {
+        const os = await window.storage.getOSById(osId);
 
-        tbody.querySelectorAll('.btn-editar').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.dataset.id;
-                const os = await window.storage.getOSById(id);
-                if (os) this.openModal(os);
-            });
-        });
+        if (!os) {
+            Utils.showToast('OS não encontrada', 'error');
+            return;
+        }
+
+        // Buscar informações para mostrar no modal
+        const numeroOS = os.numero || osId;
+        const cliente = await window.storage.getClienteById(os.clienteId);
+        const nomeCliente = cliente ? cliente.nome : 'Cliente não identificado';
+
+        // Personalizar mensagem do modal
+        const mensagem = document.querySelector('.modal-confirmacao__message');
+        if (mensagem) {
+            mensagem.innerHTML = `
+      <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: left;">
+        <div style="margin-bottom: 0.5rem;"><strong>OS #${numeroOS}</strong></div>
+        <div style="font-size: 0.9rem; color: #64748b;">
+          <div>👤 Cliente: ${nomeCliente}</div>
+          <div>🚗 Veículo: ${os.veiculoModelo || '-'} ${os.veiculoPlaca || ''}</div>
+          <div>💰 Valor: ${Utils.formatCurrency(os.valorTotal)}</div>
+          <div>📊 Status: ${os.status}</div>
+        </div>
+      </div>
+      ⚠️ Esta ação não pode ser desfeita. A ordem de serviço será permanentemente excluída.
+    `;
+        }
+
+        // Abrir modal universal
+        abrirModalConfirmacaoExclusao(osId, 'os');
+    },
+
+    async editarOS(osId) {
+        const os = await window.storage.getOSById(osId);
+        if (os) {
+            await this.openModal(os);
+        } else {
+            Utils.showToast('OS não encontrada', 'error');
+        }
     },
 
     async openModal(os = null) {
@@ -412,7 +447,6 @@ const OS = {
 
         modal.classList.add('is-open');
     },
-
 
     closeModal() {
         const modal = document.getElementById('modal-os');
@@ -741,7 +775,7 @@ const OS = {
             dataAbertura: document.getElementById('os-data-abertura').value,
             dataPrevisao: document.getElementById('os-data-previsao').value,
             formaPagamento: document.getElementById('os-forma-pagamento').value,
-            valorPago: 0, // Será calculado com base nas parcelas ou definido manualmente
+            valorPago: 0,
             status: document.getElementById('os-status').value,
             garantia: document.getElementById('os-garantia').value,
             observacoes: document.getElementById('os-observacoes').value.trim()
@@ -787,22 +821,70 @@ const OS = {
             }
         }
 
-        // === SALVAR ===
+        // === VERIFICAR SE PRECISA REGISTRAR ENTRADA NO CAIXA ===
+        const statusAntigo = id ? (await window.storage.getOSById(id))?.status : null;
+        const statusNovo = osData.status;
+
+        // 🆕 Registrar no caixa quando a OS for concluída ou marcada como pronta
+        const deveLancarCaixa = (statusNovo === 'concluido' || statusNovo === 'pronto') &&
+            statusAntigo !== statusNovo;
+
+        // === SALVAR OS ===
+        let osId;
         if (id) {
-            // Atualizar
             await window.storage.updateOS(id, osData);
+            osId = id;
             Utils.showToast('OS atualizada com sucesso!', 'success');
         } else {
-            // Criar
-            await window.storage.addOS(osData);
+            osId = await window.storage.addOS(osData);
             Utils.showToast('OS criada com sucesso!', 'success');
+        }
+
+        // === 🆕 LANÇAR NO CAIXA SE NECESSÁRIO ===
+        if (deveLancarCaixa && (osData.valorMaoObra > 0 || osData.valorPecas > 0)) {
+            const cliente = await window.storage.getClienteById(osData.clienteId);
+            const nomeCliente = cliente ? cliente.nome : 'Cliente não identificado';
+            const numeroOS = (await window.storage.getOSById(osId))?.numero || osId;
+
+            // 🆕 Lançar mão de obra no caixa
+            if (osData.valorMaoObra > 0) {
+                await window.storage.addMovimentoCaixa({
+                    tipo: 'entrada',
+                    descricao: `Mão de Obra - OS #${numeroOS} - ${nomeCliente}`,
+                    data: osData.dataAbertura,
+                    valor: osData.valorMaoObra,
+                    formaPagamento: osData.formaPagamento,
+                    categoria: 'venda_os',
+                    status: 'confirmado',
+                    observacoes: `Referente à OS #${numeroOS} - ${osData.veiculoModelo || 'Veículo'} ${osData.veiculoPlaca || ''}`
+                });
+                console.log(`[✓] Mão de obra lançada no caixa: R$ ${osData.valorMaoObra}`);
+            }
+
+            // 🆕 Lançar peças/material no caixa
+            if (osData.valorPecas > 0) {
+                await window.storage.addMovimentoCaixa({
+                    tipo: 'entrada',
+                    descricao: `Material/Peças - OS #${numeroOS} - ${nomeCliente}`,
+                    data: osData.dataAbertura,
+                    valor: osData.valorPecas,
+                    formaPagamento: osData.formaPagamento,
+                    categoria: 'venda_pecas',
+                    status: 'confirmado',
+                    observacoes: `Referente à OS #${numeroOS} - ${osData.veiculoModelo || 'Veículo'} ${osData.veiculoPlaca || ''}`
+                });
+                console.log(`[✓] Peças lançadas no caixa: R$ ${osData.valorPecas}`);
+            }
+
+            Utils.showToast('💰 Valores lançados no caixa!', 'success');
         }
 
         this.closeModal();
         await this.render();
 
-        // Atualizar dashboard
+        // Atualizar dashboard e caixa
         if (window.Dashboard) await window.Dashboard.render();
+        if (window.Caixa) await window.Caixa.render();
     },
 
     async delete(id) {

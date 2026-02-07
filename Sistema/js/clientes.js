@@ -292,8 +292,8 @@ const Clientes = {
                 </div>
                 </div>
             `).join('');
-                    } else {
-                        elVeiculos.innerHTML = `
+            } else {
+                elVeiculos.innerHTML = `
                 <div style="text-align: center; padding: 2rem; background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6;">
                 <i class="fas fa-car" style="font-size: 3rem; color: #ced4da; margin-bottom: 1rem;"></i>
                 <p style="color: #6c757d; margin: 0; font-style: italic;">Nenhum veículo cadastrado</p>
@@ -545,6 +545,121 @@ const Clientes = {
 
             lista.appendChild(div);
         });
+    },
+
+    imprimirDetalhes() {
+        const conteudo = document.getElementById('area-impressao-cliente');
+        if (!conteudo) return;
+
+        const janelaImpressao = window.open('', '', 'width=800,height=600');
+        janelaImpressao.document.write(`
+    <html>
+      <head>
+        <title>Detalhes do Cliente</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            color: #333;
+          }
+          h2 { 
+            color: #667eea; 
+            margin-bottom: 20px; 
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+          }
+          h4 { 
+            color: #2c3e50; 
+            margin: 20px 0 10px 0; 
+            font-size: 1.1rem;
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px;
+          }
+          th, td { 
+            padding: 10px; 
+            text-align: left; 
+            border: 1px solid #ddd; 
+          }
+          th { 
+            background: #f8f9fa; 
+            font-weight: 600;
+          }
+          .info-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 15px; 
+            margin: 15px 0;
+          }
+          .info-item { 
+            padding: 10px; 
+            background: #f8f9fa; 
+            border-radius: 5px;
+          }
+          .info-item strong { 
+            display: block; 
+            color: #667eea; 
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+          }
+          .veiculo-item { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 10px; 
+            border-left: 4px solid #667eea;
+          }
+          .veiculo-item strong { 
+            color: #2c3e50; 
+            font-size: 1.1rem;
+          }
+          @media print {
+            body { padding: 10px; }
+            button { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        ${conteudo.innerHTML}
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(function() { window.close(); }, 100);
+          }
+        </script>
+      </body>
+    </html>
+  `);
+        janelaImpressao.document.close();
+    },
+
+    
+    novaOSCliente() {
+        const clienteId = this.clienteDetalhesId;
+
+        this.closeDetalhes();
+
+        if (window.router) {
+            window.router.navigateTo('os');
+        }
+
+        setTimeout(() => {
+            if (window.OS && window.OS.openModal) {
+                window.OS.openModal();
+                setTimeout(() => {
+                    const selectCliente = document.getElementById('os-cliente');
+                    if (selectCliente && clienteId) {
+                        selectCliente.value = clienteId;
+                        selectCliente.dispatchEvent(new Event('change'));
+                    }
+                }, 100);
+            }
+        }, 400);
+
+        console.log('[✓] Abrindo modal de OS para cliente:', clienteId);
     }
 };
 

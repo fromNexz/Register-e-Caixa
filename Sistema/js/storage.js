@@ -92,20 +92,20 @@ class StorageManager {
 
   async init() {
     try {
-        
-        const clientes = await db.clientes.count();
-        const os = await db.ordensServico.count();
-        const caixa = await db.movimentosCaixa.count();
-        
-        console.log('📦 Storage IndexedDB inicializado:', {
-            clientes,
-            os,
-            caixa
-        });
+
+      const clientes = await db.clientes.count();
+      const os = await db.ordensServico.count();
+      const caixa = await db.movimentosCaixa.count();
+
+      console.log('📦 Storage IndexedDB inicializado:', {
+        clientes,
+        os,
+        caixa
+      });
     } catch (error) {
-        console.error('❌ Erro ao inicializar IndexedDB:', error);
+      console.error('❌ Erro ao inicializar IndexedDB:', error);
     }
-}
+  }
 
 
   // ==========================================
@@ -215,8 +215,6 @@ class StorageManager {
 
   async deleteOS(id) {
     await db.ordensServico.delete(id);
-
-    await db.movimentosCaixa.where('osId').equals(id).delete();
   }
 
   async getNextOSNumber() {

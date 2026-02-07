@@ -1902,86 +1902,86 @@ tr:hover {
    ================================================ */
 
 .veiculo-item {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid #e9ecef;
-  transition: all 0.2s ease;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
 }
 
 .veiculo-item:hover {
-  background: #e9ecef;
-  border-color: #dee2e6;
-  transform: translateX(5px);
+    background: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateX(5px);
 }
 
 #veiculos-lista {
-  max-height: 400px;
-  overflow-y: auto;
-  margin-top: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 1rem;
 }
 
 #veiculos-lista::-webkit-scrollbar {
-  width: 8px;
+    width: 8px;
 }
 
 #veiculos-lista::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
+    background: #f1f1f1;
+    border-radius: 10px;
 }
 
 #veiculos-lista::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
+    background: #888;
+    border-radius: 10px;
 }
 
 #veiculos-lista::-webkit-scrollbar-thumb:hover {
-  background: #555;
+    background: #555;
 }
 
 #btn-adicionar-veiculo {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  transition: all 0.3s ease;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
 }
 
 #btn-adicionar-veiculo:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 /* Select de veículos na OS */
 #os-veiculo-select {
-  font-weight: 600;
-  color: #2c3e50;
-  background-color: #fff;
-  border: 2px solid #667eea;
+    font-weight: 600;
+    color: #2c3e50;
+    background-color: #fff;
+    border: 2px solid #667eea;
 }
 
 #os-veiculo-select:disabled {
-  background-color: #e9ecef;
-  border-color: #ced4da;
-  cursor: not-allowed;
+    background-color: #e9ecef;
+    border-color: #ced4da;
+    cursor: not-allowed;
 }
 
 #os-campos-veiculo {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
 }
 
 #os-campos-veiculo input[readonly] {
-  background-color: #fff;
-  border: 1px solid #ced4da;
-  cursor: default;
-  color: #495057;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    cursor: default;
+    color: #495057;
 }
 
 /* ================================================
@@ -1989,56 +1989,56 @@ tr:hover {
    ================================================ */
 
 .veiculo-item {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid #e9ecef;
-  transition: all 0.2s ease;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
 }
 
 .veiculo-item:hover {
-  background: #e9ecef;
-  border-color: #dee2e6;
-  transform: translateX(5px);
+    background: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateX(5px);
 }
 
 #veiculos-lista {
-  max-height: 400px;
-  overflow-y: auto;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
 #veiculos-lista::-webkit-scrollbar {
-  width: 8px;
+    width: 8px;
 }
 
 #veiculos-lista::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
+    background: #f1f1f1;
+    border-radius: 10px;
 }
 
 #veiculos-lista::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
+    background: #888;
+    border-radius: 10px;
 }
 
 #veiculos-lista::-webkit-scrollbar-thumb:hover {
-  background: #555;
+    background: #555;
 }
 
 #btn-adicionar-veiculo {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  transition: all 0.3s ease;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
 }
 
 #btn-adicionar-veiculo:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 /* ================================================
@@ -2046,39 +2046,90 @@ tr:hover {
    ================================================ */
 
 #os-veiculo-select {
-  font-weight: 600;
-  color: #2c3e50;
-  background-color: #fff;
-  border: 2px solid #667eea;
-  font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    background-color: #fff;
+    border: 2px solid #667eea;
+    font-size: 1rem;
 }
 
 #os-veiculo-select:disabled {
-  background-color: #e9ecef;
-  border-color: #ced4da;
-  cursor: not-allowed;
-  opacity: 0.6;
+    background-color: #e9ecef;
+    border-color: #ced4da;
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 #os-campos-veiculo input[readonly] {
-  background-color: #fff;
-  border: 1px solid #ced4da;
-  cursor: default;
-  color: #495057;
-  font-weight: 500;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    cursor: default;
+    color: #495057;
+    font-weight: 500;
 }
 
 #os-campos-veiculo {
-  animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ================================================
+   ESTILO DE IMPRESSÃO PARA DETALHES DO CLIENTE
+   ================================================ */
+
+@media print {
+
+    /* Esconder elementos desnecessários na impressão */
+    .modal__backdrop,
+    .modal-header button,
+    .modal-footer,
+    .sidebar,
+    .header,
+    button,
+    .no-print {
+        display: none !important;
+    }
+
+    /* Ajustar modal para impressão */
+    .modal {
+        position: static;
+        display: block;
+    }
+
+    .modal-content {
+        box-shadow: none;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    /* Quebras de página adequadas */
+    h4 {
+        page-break-after: avoid;
+    }
+
+    table {
+        page-break-inside: avoid;
+    }
+
+    /* Cores para impressão */
+    body {
+        background: white;
+        color: black;
+    }
 }

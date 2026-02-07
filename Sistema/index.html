@@ -504,181 +504,38 @@
             <div class="modal-header">
                 <h3><i class="fas fa-user-circle"></i> Detalhes do Cliente</h3>
                 <button type="button" class="btn btn-outline" style="padding: 0.5rem 1rem;"
-                    id="btn-fechar-detalhes">×</button>
-            </div>
-            <div class="modal-body">
-                <!-- Informações Principais -->
-                <div class="cliente-info-card">
-                    <div class="cliente-info-header">
-                        <div class="cliente-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="cliente-info-main">
-                            <h2 id="detalhe-nome">-</h2>
-                            <p id="detalhe-id-sequencial" class="cliente-id-badge">-</p>
-                        </div>
-                        <div class="cliente-actions-quick">
-                            <button class="btn btn-primary btn-sm" id="btn-editar-do-detalhe">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button class="btn btn-success btn-sm" id="btn-nova-os-do-detalhe">
-                                <i class="fas fa-plus"></i> Nova OS
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Grid de Informações -->
-                    <div class="cliente-info-grid">
-                        <div class="info-item">
-                            <i class="fas fa-phone"></i>
-                            <div>
-                                <span class="info-label">Telefone</span>
-                                <span class="info-value" id="detalhe-telefone">-</span>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-envelope"></i>
-                            <div>
-                                <span class="info-label">Email</span>
-                                <span class="info-value" id="detalhe-email">-</span>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-id-card"></i>
-                            <div>
-                                <span class="info-label">CPF/CNPJ</span>
-                                <span class="info-value" id="detalhe-documento">-</span>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <div>
-                                <span class="info-label">Endereço</span>
-                                <span class="info-value" id="detalhe-endereco">-</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Seção de Veículos -->
-                    <div class="form-section"
-                        style="margin-top: 1.5rem; border-top: 2px solid #e9ecef; padding-top: 1.5rem;">
-                        <h4
-                            style="margin-bottom: 1rem; color: #2c3e50; display: flex; align-items: center; gap: 0.5rem;">
-                            <i class="fas fa-car"></i> Veículos do Cliente
-                        </h4>
-
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Modelo <span style="color: #e74c3c;">*</span></label>
-                                <input type="text" id="cliente-veiculo-modelo" class="input-control"
-                                    placeholder="Ex: Fiat Uno, Honda Civic...">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Ano</label>
-                                <input type="text" id="cliente-veiculo-ano" class="input-control" placeholder="Ex: 2020"
-                                    maxlength="4">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Placa</label>
-                                <input type="text" id="cliente-veiculo-placa" class="input-control"
-                                    placeholder="Ex: ABC-1234" maxlength="8" style="text-transform: uppercase;">
-                            </div>
-                        </div>
-
-                        <button type="button" id="btn-adicionar-veiculo" class="btn btn-secondary"
-                            style="margin-top: 0.75rem; width: 100%;">
-                            <i class="fas fa-plus-circle"></i> Adicionar Veículo
-                        </button>
-
-                        <!-- Lista de Veículos -->
-                        <div id="veiculos-lista" style="margin-top: 1rem;">
-                            <p style="color: #64748b; font-style: italic; text-align: center; padding: 1rem;">
-                                Nenhum veículo adicionado
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Observações -->
-                    <div class="observacoes-card" id="observacoes-container">
-                        <h4><i class="fas fa-sticky-note"></i> Observações</h4>
-                        <p id="detalhe-observacoes">-</p>
-                    </div>
-                </div>
-
-                <!-- Histórico de OS -->
-                <div class="historico-section">
-                    <div class="historico-header">
-                        <h3><i class="fas fa-history"></i> Histórico de Ordens de Serviço</h3>
-                        <div class="historico-stats">
-                            <span class="stat-badge stat-total">
-                                <i class="fas fa-clipboard-list"></i>
-                                <strong id="stat-total-os">0</strong> Total
-                            </span>
-                            <span class="stat-badge stat-pendente">
-                                <i class="fas fa-exclamation-circle"></i>
-                                <strong id="stat-pendente-os">0</strong> Pendentes
-                            </span>
-                            <span class="stat-badge stat-valor">
-                                <i class="fas fa-dollar-sign"></i>
-                                <strong id="stat-valor-total">R$ 0,00</strong>
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Tabela de Histórico -->
-                    <div class="historico-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Nº OS</th>
-                                    <th>Data</th>
-                                    <th>Serviço</th>
-                                    <th>Valor</th>
-                                    <th>Pagamento</th>
-                                    <th>Status</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="historico-tbody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DETALHES DO CLIENTE (APENAS VISUALIZAÇÃO) -->
-    <div id="modal-detalhes-cliente" class="modal">
-        <div class="modal__backdrop"></div>
-        <div class="modal-content large">
-            <div class="modal-header">
-                <h3><i class="fas fa-user-circle"></i> Detalhes do Cliente</h3>
-                <button type="button" class="btn btn-outline" style="padding: 0.5rem 1rem;"
                     onclick="window.Clientes.closeDetalhes()">×</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" id="area-impressao-cliente">
                 <!-- Informações Pessoais -->
                 <div
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white; margin-bottom: 1.5rem;">
                     <h2 id="detalhe-nome" style="margin: 0 0 0.5rem 0; font-size: 1.8rem;">-</h2>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem;">
+                    <div
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
                         <div>
-                            <i class="fas fa-phone"></i> <strong>Telefone:</strong><br>
-                            <span id="detalhe-telefone" style="font-size: 1.1rem;">-</span>
+                            <div style="opacity: 0.9; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                                <i class="fas fa-phone"></i> Telefone
+                            </div>
+                            <div id="detalhe-telefone" style="font-size: 1.1rem; font-weight: 600;">-</div>
                         </div>
                         <div>
-                            <i class="fas fa-envelope"></i> <strong>Email:</strong><br>
-                            <span id="detalhe-email" style="font-size: 1.1rem;">-</span>
+                            <div style="opacity: 0.9; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                                <i class="fas fa-envelope"></i> Email
+                            </div>
+                            <div id="detalhe-email" style="font-size: 1.1rem; font-weight: 600;">-</div>
                         </div>
                         <div>
-                            <i class="fas fa-id-card"></i> <strong>CPF/CNPJ:</strong><br>
-                            <span id="detalhe-documento" style="font-size: 1.1rem;">-</span>
+                            <div style="opacity: 0.9; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                                <i class="fas fa-id-card"></i> CPF/CNPJ
+                            </div>
+                            <div id="detalhe-documento" style="font-size: 1.1rem; font-weight: 600;">-</div>
                         </div>
                         <div>
-                            <i class="fas fa-map-marker-alt"></i> <strong>Endereço:</strong><br>
-                            <span id="detalhe-endereco" style="font-size: 1.1rem;">-</span>
+                            <div style="opacity: 0.9; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                                <i class="fas fa-map-marker-alt"></i> Endereço
+                            </div>
+                            <div id="detalhe-endereco" style="font-size: 1.1rem; font-weight: 600;">-</div>
                         </div>
                     </div>
                 </div>
@@ -689,7 +546,8 @@
                         <i class="fas fa-car"></i> Veículos do Cliente
                     </h4>
                     <div id="detalhe-veiculos">
-                        <p style="color: #64748b; font-style: italic; text-align: center;">Carregando...</p>
+                        <p style="color: #64748b; font-style: italic; text-align: center; padding: 2rem;">Carregando...
+                        </p>
                     </div>
                 </div>
 
@@ -708,14 +566,66 @@
                     <h4 style="margin-bottom: 1rem; color: #2c3e50; display: flex; align-items: center; gap: 0.5rem;">
                         <i class="fas fa-history"></i> Histórico de Ordens de Serviço
                     </h4>
-                    <div id="historico-os-container">
-                        <p style="color: #64748b; font-style: italic; text-align: center;">Carregando histórico...</p>
+
+                    <!-- Estatísticas -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                        <div style="background: #e3f2fd; padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 0.8rem; color: #1976d2; margin-bottom: 0.25rem;">Total de OS</div>
+                            <div id="stat-total-os" style="font-size: 1.5rem; font-weight: 700; color: #1976d2;">0</div>
+                        </div>
+                        <div style="background: #fff3e0; padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 0.8rem; color: #f57c00; margin-bottom: 0.25rem;">Pendentes</div>
+                            <div id="stat-pendente-os" style="font-size: 1.5rem; font-weight: 700; color: #f57c00;">0
+                            </div>
+                        </div>
+                        <div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 0.8rem; color: #388e3c; margin-bottom: 0.25rem;">Valor Total</div>
+                            <div id="stat-valor-total" style="font-size: 1.5rem; font-weight: 700; color: #388e3c;">R$ 0
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabela de histórico -->
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">OS
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">
+                                        Data</th>
+                                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">
+                                        Veículo</th>
+                                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">
+                                        Valor</th>
+                                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">
+                                        Pagamento</th>
+                                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">
+                                        Status</th>
+                                    <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #dee2e6;">
+                                        Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historico-tbody">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; padding: 2rem; color: #64748b;">
+                                        Carregando histórico...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="window.Clientes.closeDetalhes()">
-                    Fechar
+                    <i class="fas fa-times"></i> Fechar
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="window.Clientes.imprimirDetalhes()">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+                <button type="button" class="btn btn-success" onclick="window.Clientes.novaOSCliente()">
+                    <i class="fas fa-plus"></i> Nova OS
                 </button>
                 <button type="button" class="btn btn-primary" onclick="window.Clientes.editarCliente()">
                     <i class="fas fa-edit"></i> Editar Cliente
@@ -723,6 +633,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- MODAL NOVA/EDITAR OS -->
     <div id="modal-os" class="modal">
